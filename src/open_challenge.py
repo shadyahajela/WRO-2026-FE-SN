@@ -52,8 +52,13 @@ on = 1
 last_message = ""
 
 #wall error kp steering
+#og is 0.015
 kp = 0.015
 center = 90 #center value for steering, adjust as needed
+
+#timer variables
+start_time_line = time.time()
+start_time_finshed = 0
 
 #main loop to show camera feed
 while True:
@@ -66,23 +71,26 @@ while True:
     
 
     #create frame and get contours
-    frame1 = Frame(0, 240, 40, 480,image, [lowBlack], [highBlack], frameColor=(255, 0, 0))
+    frame1 = Frame(0, 170, 40, 480,image, [lowBlack], [highBlack], frameColor=(255, 0, 0))
     leftPx = frame1.getContour()
 
-    frame2 = Frame(600, 240, 640, 480,image, [lowBlack], [highBlack], frameColor=(255, 0, 0))
+    frame2 = Frame(600, 170, 640, 480,image, [lowBlack], [highBlack], frameColor=(255, 0, 0))
     rightPx = frame2.getContour()
 
     bottom_frame = Frame(120, 370, 520, 470, image, [lowBlue, lowOrange], [highBlue,  highOrange])
     bluePx = bottom_frame.getContour(0, contourColor=(255, 85, 0)) #blue
     orangePx = bottom_frame.getContour(1, contourColor =(0, 128, 255)) #orange
 
+
     #change later
     if (orangePx > 10000) and (orangePx < 50000):
-        orangeLine += 1
+        if time.time() - start_time_line > 1.5: #if orange line is detected for more than 1 second, count it
+            orangeLine += 1
+            start_time_line = time.time() #reset timer when orange line is detected
     
     
     # #CW OR CCW?
-    # if (CW == 0) and (CCW == 0):
+    # if (CW == 0) and (CCW == 0):)
     #     if (orangePx < 10000) and (orangePx > 500):
     #         CW = 1
             
@@ -96,15 +104,25 @@ while True:
 
     steering_value = round(steering_value / 10) * 10 #round to nearest 10 for smoother steering
 
-    # #chage later
-    # if orangeLine ==  2:
-    #     message = f"SERVO:{steering_value},SPEED:{100},{on}\n"
+
+    #stop when see all the orange line
+    if orangeLine >=  4:
+        if start_time_finshed == 0:
+            start_time_finshed = time.time() #start timer when all orange lines are detected
+        if time.time() - start_time_finshed > 8.2: #if all orange lines are detected for more than 3 seconds, stop the car
+            speed_value = 100 
+            on = 0
+
+    #print values on camera feed
+    cv2.putText(image, f"Lap: {orangeLine}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+    cv2.putText(image, f"Steering: {steering_value}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
 
     #send values to micrbit through serial connections
     print(f"Steering: {steering_value}, Speed: {speed_value}, ON?: {on}")
     print(orangeLine)
 
-    message = f"SERVO:{steering_value},SPEED:{speed_value},{0}\n"
+    message = f"SERVO:{steering_value},SPEED:{speed_value},{on}\n"
 
     # only send if different
     if message != last_message:
