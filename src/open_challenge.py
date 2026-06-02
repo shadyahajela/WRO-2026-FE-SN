@@ -25,7 +25,7 @@ time.sleep(2)  # Allow camera to warm up
 ser = serial.Serial('/dev/ttyACM0', 115200, timeout=1)
 time.sleep(2)
 
-#COUNTING
+#What direction are we going? CW or CCW?
 CW = 0
 CCW = 0
 
@@ -53,7 +53,8 @@ last_message = ""
 
 #wall error kp steering
 #og is 0.015
-kp = 0.015
+kp = 0.005
+
 center = 90 #center value for steering, adjust as needed
 
 #timer variables
@@ -71,10 +72,10 @@ while True:
     
 
     #create frame and get contours
-    frame1 = Frame(0, 170, 40, 480,image, [lowBlack], [highBlack], frameColor=(255, 0, 0))
+    frame1 = Frame(0, 160, 40, 480,image, [lowBlack], [highBlack], frameColor=(255, 0, 0))
     leftPx = frame1.getContour()
 
-    frame2 = Frame(600, 170, 640, 480,image, [lowBlack], [highBlack], frameColor=(255, 0, 0))
+    frame2 = Frame(600, 160, 640, 480,image, [lowBlack], [highBlack], frameColor=(255, 0, 0))
     rightPx = frame2.getContour()
 
     bottom_frame = Frame(120, 370, 520, 470, image, [lowBlue, lowOrange], [highBlue,  highOrange])
@@ -82,28 +83,28 @@ while True:
     orangePx = bottom_frame.getContour(1, contourColor =(0, 128, 255)) #orange
 
 
-    #change later
-    if (orangePx > 10000) and (orangePx < 50000):
+    #count orange line when detected (laps)
+    if (orangePx > 8000) and (orangePx < 40000):
         if time.time() - start_time_line > 1.5: #if orange line is detected for more than 1 second, count it
             orangeLine += 1
             start_time_line = time.time() #reset timer when orange line is detected
     
     
-    # #CW OR CCW?
-    # if (CW == 0) and (CCW == 0):)
-    #     if (orangePx < 10000) and (orangePx > 500):
-    #         CW = 1
+    #CW OR CCW?
+    if (CW == 0) and (CCW == 0):
+        if (orangePx < 10000) and (orangePx > 500):
+            CW = 1
             
-    #     elif (bluePx < 10000) and (bluePx > 500):
-    #         CCW = 1
+        elif (bluePx < 10000) and (bluePx > 500):
+            CCW = 1
 
     #steering value based off of wall error
-    error = leftPx - rightPx
+    error = rightPx - leftPx
 
     steering_value = center + (kp * error)
-
-    steering_value = round(steering_value / 10) * 10 #round to nearest 10 for smoother steering
-
+    print(f"Error: {error}, Steering Value: {steering_value}")
+    steering_value = round(steering_value / 5) * 5 #round to nearest 5 for smoother steering
+    print(f"Rounded Steering Value: {steering_value}")
 
     #stop when see all the orange line
     if orangeLine >=  4:
@@ -116,7 +117,7 @@ while True:
     #print values on camera feed
     cv2.putText(image, f"Lap: {orangeLine}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
     cv2.putText(image, f"Steering: {steering_value}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-
+    cv2.putText(image, f"Direction: {'CW' if CW else 'CCW'}", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
     #send values to micrbit through serial connections
     print(f"Steering: {steering_value}, Speed: {speed_value}, ON?: {on}")
@@ -138,6 +139,10 @@ while True:
 
     # Check for 'q' key press to exit
     if cv2.waitKey(1) & 0xFF == ord('q'):
+        steering_value1 = 90
+        speed_value1 = 100
+        on1 = 0
+        ser.write(f"SERVO:{steering_value1},SPEED:{speed_value1},{on1}\n".encode())
         time.sleep(0.05)
         break
 
@@ -146,7 +151,8 @@ steering_value1 = 90
 speed_value1 = 100
 on1 = 0
 ser.write(f"SERVO:{steering_value1},SPEED:{speed_value1},{on1}\n".encode())
-time.sleep(0.05)
+print("FINISH")
+time.sleep(0.10)
 ser.close() #close serial connection when done
 
 cv2.destroyAllWindows() #clean up windows when done
