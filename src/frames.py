@@ -201,3 +201,112 @@ class Frame:
                 cv2.drawContours(draw_area, shifted, -1, contourColor, 2)
 
         return left_x, right_x, full_mask, scan_y1, scan_y2
+
+
+    
+    def getWallEdgesSplit(self, color=0, scan_height=30, col_threshold=20,
+                      contourColor=(0, 255, 0)):
+
+        scan_y1 = max(self.y1, self.y2 - scan_height)
+        scan_y2 = self.y2
+
+        total_width = self.x2 - self.x1
+
+        if total_width <= 0:
+            return None, None
+
+        mid_col = self.x1 + total_width // 2
+
+        # Left and right boxes
+        left_roi = self.image[scan_y1:scan_y2, self.x1:mid_col]
+        right_roi = self.image[scan_y1:scan_y2, mid_col:self.x2]
+
+        def create_mask(roi):
+
+            if roi.size == 0:
+                return None
+
+            blurred = cv2.GaussianBlur(roi, (7, 7), 0)
+
+            hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+
+            mask = cv2.inRange(
+                hsv,
+                self.lowColor[color],
+                self.highColor[color]
+            )
+
+            kernel = np.ones((3, 3), np.uint8)
+
+            mask = cv2.morphologyEx(
+                mask,
+                cv2.MORPH_OPEN,
+                kernel
+            )
+
+            return mask
+
+        left_mask = create_mask(left_roi)
+        right_mask = create_mask(right_roi)
+
+        left_x = None
+        right_x = None
+
+        # LEFT BOX
+        if left_mask is not None:
+
+            cols = np.where(
+                np.sum(left_mask, axis=0) > col_threshold
+            )[0]
+
+            if cols.size > 0:
+
+                # rightmost black pixel in left box
+                left_x = self.x1 + int(cols.max())
+
+                cv2.line(
+                    self.image,
+                    (left_x, scan_y1),
+                    (left_x, scan_y2),
+                    contourColor,
+                    2
+                )
+
+        # RIGHT BOX
+        if right_mask is not None:
+
+            cols = np.where(
+                np.sum(right_mask, axis=0) > col_threshold
+            )[0]
+
+            if cols.size > 0:
+
+                # leftmost black pixel in right box
+                right_x = mid_col + int(cols.min())
+
+                cv2.line(
+                    self.image,
+                    (right_x, scan_y1),
+                    (right_x, scan_y2),
+                    contourColor,
+                    2
+                )
+
+        # Draw debug boxes
+        cv2.rectangle(
+            self.image,
+            (self.x1, scan_y1),
+            (mid_col, scan_y2),
+            (255, 0, 0),
+            2
+        )
+
+        cv2.rectangle(
+            self.image,
+            (mid_col, scan_y1),
+            (self.x2, scan_y2),
+            (0, 0, 255),
+            2
+        )
+
+        return left_x, right_x
