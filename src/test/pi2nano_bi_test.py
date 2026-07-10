@@ -12,9 +12,6 @@ while True:
         print("Received:", message)
 
         if message == "START":
-            value = random.randint(1, 100)
+            ser.write(f"180 100 1 12 OPEN\n".encode())
+        
 
-            ser.write(f"{value}\n".encode())
-
-            print("Sent:", value) 
-            
