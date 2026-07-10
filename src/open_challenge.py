@@ -47,18 +47,20 @@ lowOrange  = np.array([8, 100, 100])
 highOrange = np.array([35, 255, 255])
 
 #MICROBIT VALUES
-steering_value = 0
-speed_value = 20
-on = 1
+steering_value = 0 # Calculated steering value to add or subtract from center value
+center = 85 #center value for steering, adjust as needed
+speed_value = 40 # Speed perce
+on = 2
 
-#message sent to serial
+#Last sent message sent to serial to compare against current message to avoid sending duplicates
 last_message = ""
 
 #wall error kp steering
-#og is 0.015
-kp = 0.3
+kp = 0.3 #og is 0.015
+kd = 0.15
+previous_error = 0 
 
-center = 85 #center value for steering, adjust as needed
+alpha = 0.15 # loss pass filter
 
 # Lane estimation for partial visibility handling
 track_width = 240
@@ -68,10 +70,13 @@ track_width = 240
 
 last_corridor_center = None
 last_detection_time = 0
+filtered_center = None
 
 #timer variables
 start_time_line = time.time()
 start_time_finshed = 0
+
+turning_start_time = 0
 
 #STATES
 STRAIGHT = 0
@@ -97,23 +102,23 @@ while True:
     bluePx = bottom_frame.getContour(0, contourColor=(255, 85, 0)) #blue
     orangePx = bottom_frame.getContour(1, contourColor =(0, 128, 255)) #orange
 
-    # Straight wall detection (black) frame for turning
-    front_frame = Frame(250, 170, 390, 240, image, [lowBlack], [highBlack], frameColor = (255,0,0))
-    frontBlack = front_frame.getContour(0, contourColor=(0,255,0))
+    # # Straight wall detection (black) frame for turning
+    # front_frame = Frame(250, 200, 390, 270, image, [lowBlack], [highBlack], frameColor = (255,0,0))
+    # frontBlack = front_frame.getContour(0, contourColor=(0,255,0))
 
     # Use split horizontal scanline to find inner left/right wall edges (black)
     left_x, right_x, wall_mask, scan_y1, scan_y2 = wall_frame.getInnerEdgesSplit(color=0, scan_height=40, col_threshold=20, contourColor=(0,255,0))
 
 
     #count orange line when detected (laps)
-    if (orangePx > 8000) and (orangePx < 40000):
+    if (orangePx > 4000) and (orangePx < 40000):
         if time.time() - start_time_line > 1.5: #if orange line is detected for more than 1 second, count it
             orangeLine += 1
             start_time_line = time.time() #reset timer when orange line is detected
             line_detected = True
     
     #count BLUE line when detected (laps)
-    if (bluePx > 8000) and (bluePx < 40000):
+    if (bluePx > 4000) and (bluePx < 40000):
         if time.time() - start_time_line > 1.5: #if blue line is detected for more than 1 second, count it
             blueLine += 1
             start_time_line = time.time() #reset timer when blue line is detected
@@ -121,10 +126,9 @@ while True:
     
     #CW OR CCW?
     if (CW == 0) and (CCW == 0):
-        if (orangePx < 10000) and (orangePx > 500):
+        if 500 < orangePx < 10000:
             CW = 1
-
-        elif (bluePx < 10000) and (bluePx > 500):
+        elif 500 < bluePx < 10000:
             CCW = 1
     elif (CW == 1) and (CCW == 0):
         side_wall_missing = right_x is None
@@ -132,8 +136,8 @@ while True:
         side_wall_missing = left_x is None
 
     #to see if we will turn soon (black frame, if it saw enough of the wall)
-    if (frontBlack > 2000):
-        frontBlack_detected = True
+    # if (frontBlack > 2000):
+    #     frontBlack_detected = True
 
     if state == STRAIGHT:
         #------------------------------------------------------------------------------------------------------
@@ -177,7 +181,17 @@ while True:
 
         
         # Compute steering error from corridor center
-        steering_error =  corridor_center - img_center
+        
+        if filtered_center is None:
+            filtered_center = corridor_center
+
+        #update filter eery frame
+        filtered_center = (alpha * corridor_center) + ((1 - alpha) * filtered_center)
+        #use filtered alue instead of raw
+        steering_error =  filtered_center - img_center
+
+
+        derivative = steering_error - previous_error
 
         # Dead zone (pixels) around image center where steering is suppressed
         dead_zone_px = 20  # configurable
@@ -208,13 +222,19 @@ while True:
         cv2.line(image, (img_center, (scan_y1+scan_y2)//2), (int(corridor_center), (scan_y1+scan_y2)//2), (0,0,255), 2)
 
         #check if it is turning
-        if line_detected and side_wall_missing and frontBlack_detected:
-            state = TURNING
-            turning_start_time = time.time()
-            print("ENTER TURN")
+        if line_detected and side_wall_missing:
+            
+            turn_delay_time = time.time() 
+            if time.time() - turn_delay_time > 0.75: #wait for 0.5 seconds before turning
+                state = TURNING
+                turning_start_time = time.time()
+                print("ENTER TURN")
         else:
             # Proportional controller
-            steering_value = center + (kp * steering_error)
+            steering_value = center + (kp * steering_error) + (kd * derivative)
+            previous_error = steering_error  # update for next loop
+
+            steering_error = round(steering_error)
             print(f"Mode: {detection_mode}, Corridor center: {corridor_center}, Img center: {img_center}, Error: {steering_error}, Steering Value: {steering_value}")
             steering_value = round(steering_value / 5) * 5 #round to nearest 5 for smoother steering
             print(f"Rounded Steering Value: {steering_value}")
@@ -227,16 +247,16 @@ while True:
         elif CCW:
             steering_value = 55
 
-        if time.time() - turning_start_time > 1.0: #if it has been turning for more than 3 seconds, go back to straight mode
+        if time.time() - turning_start_time > 1.7        : #if it has been turning for more than 3 seconds, go back to straight mode
             state = STRAIGHT
             line_detected = False
-            frontBlack_detected = False
+            # frontBlack_detected = False
             side_wall_missing = False
             print("EXIT TURN")
     
 
     #stop when see all the orange line
-    if orangeLine >=  4:
+    if orangeLine >=  3:
         if start_time_finshed == 0:
             start_time_finshed = time.time() #start timer when all orange lines are detected
         if time.time() - start_time_finshed > 8.2: #if all orange lines are detected for more than 3 seconds, stop the car

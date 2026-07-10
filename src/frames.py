@@ -62,57 +62,57 @@ class Frame:
         return pixel_count
 
     # Scan a horizontal band near the bottom of this frame to find left/right wall edges
-    def getHorizontalEdges(self, color=0, scan_height=30, col_threshold=20, contourColor=(0, 255, 0)):
-        """
-        Scans a horizontal band at the bottom of the frame ROI and returns left and right x
-        coordinates (in image coordinates) where the specified color appears.
+    # def getHorizontalEdges(self, color=0, scan_height=30, col_threshold=20, contourColor=(0, 255, 0)):
+    #     """
+    #     Scans a horizontal band at the bottom of the frame ROI and returns left and right x
+    #     coordinates (in image coordinates) where the specified color appears.
 
-        Returns (left_x, right_x, mask, scan_y1, scan_y2) where left_x/right_x may be None
-        if no edges are detected.
-        """
-        # Determine scanning region (last `scan_height` pixels of this frame)
-        scan_y1 = max(self.y1, self.y2 - scan_height)
-        scan_y2 = self.y2
+    #     Returns (left_x, right_x, mask, scan_y1, scan_y2) where left_x/right_x may be None
+    #     if no edges are detected.
+    #     """
+    #     # Determine scanning region (last `scan_height` pixels of this frame)
+    #     scan_y1 = max(self.y1, self.y2 - scan_height)
+    #     scan_y2 = self.y2
 
-        # ROI for the horizontal scan
-        roi = self.image[scan_y1:scan_y2, self.x1:self.x2]
-        if roi.size == 0:
-            return None, None, None, scan_y1, scan_y2
+    #     # ROI for the horizontal scan
+    #     roi = self.image[scan_y1:scan_y2, self.x1:self.x2]
+    #     if roi.size == 0:
+    #         return None, None, None, scan_y1, scan_y2
 
-        # Smooth and convert to HSV
-        blurred = cv2.GaussianBlur(roi, (7, 7), 0)
-        hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+    #     # Smooth and convert to HSV
+    #     blurred = cv2.GaussianBlur(roi, (7, 7), 0)
+    #     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
 
-        # Build mask for the requested color index
-        mask = cv2.inRange(hsv, self.lowColor[color], self.highColor[color])
+    #     # Build mask for the requested color index
+    #     mask = cv2.inRange(hsv, self.lowColor[color], self.highColor[color])
 
-        # Clean small noise
-        kernel = np.ones((3, 3), np.uint8)
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    #     # Clean small noise
+    #     kernel = np.ones((3, 3), np.uint8)
+    #     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
 
-        # Sum vertically to get column activity (higher means more color pixels in that column)
-        col_sum = np.sum(mask, axis=0)
-        cols = np.where(col_sum > col_threshold)[0]
+    #     # Sum vertically to get column activity (higher means more color pixels in that column)
+    #     col_sum = np.sum(mask, axis=0)
+    #     cols = np.where(col_sum > col_threshold)[0]
 
-        # Draw the scanning band rectangle for debugging
-        cv2.rectangle(self.image, (self.x1, scan_y1), (self.x2, scan_y2), self.frameColor, 1)
+    #     # Draw the scanning band rectangle for debugging
+    #     cv2.rectangle(self.image, (self.x1, scan_y1), (self.x2, scan_y2), self.frameColor, 1)
 
-        # No edges found
-        if cols.size == 0:
-            return None, None, mask, scan_y1, scan_y2
+    #     # No edges found
+    #     if cols.size == 0:
+    #         return None, None, mask, scan_y1, scan_y2
 
-        left_col = int(cols[0])
-        right_col = int(cols[-1])
+    #     left_col = int(cols[0])
+    #     right_col = int(cols[-1])
 
-        # Convert back to image coordinates
-        left_x = self.x1 + left_col
-        right_x = self.x1 + right_col
+    #     # Convert back to image coordinates
+    #     left_x = self.x1 + left_col
+    #     right_x = self.x1 + right_col
 
-        # Visual overlays for the scan band and edge lines
-        cv2.line(self.image, (left_x, scan_y1), (left_x, scan_y2), contourColor, 2)
-        cv2.line(self.image, (right_x, scan_y1), (right_x, scan_y2), contourColor, 2)
+    #     # Visual overlays for the scan band and edge lines
+    #     cv2.line(self.image, (left_x, scan_y1), (left_x, scan_y2), contourColor, 2)
+    #     cv2.line(self.image, (right_x, scan_y1), (right_x, scan_y2), contourColor, 2)
 
-        return left_x, right_x, mask, scan_y1, scan_y2
+    #     return left_x, right_x, mask, scan_y1, scan_y2
 
     def getInnerEdgesSplit(self, color=0, scan_height=30, col_threshold=20, contourColor=(0, 255, 0), min_contour_area=150):
         """
