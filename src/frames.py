@@ -4,6 +4,7 @@ from picamera2 import Picamera2
 import cv2
 
 class Frame:
+    # constructor
     def __init__(self, x1, y1, x2, y2, image, lowColor, highColor, frameColor = (0, 0, 255)):
         self.x1 = x1
         self.y1 = y1
