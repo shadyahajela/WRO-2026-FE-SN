@@ -12,6 +12,9 @@ while True:
         print("Received:", message)
 
         if message == "START":
-            ser.write(f"180 100 1 12 OPEN\n".encode())
+            ser.write(f"115 155 1 12 OPEN\n".encode())
+            ser.flush()
+        
+ser.close()
         
 
