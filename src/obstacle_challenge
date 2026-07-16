@@ -27,6 +27,44 @@ time.sleep(2)
 
 import math
 
+#OBSTACLE CHALLENGE HELPERS
+OBSTACLE_BAND_PX = 15  # examine the lowest ~10-20px of the contour for a jitter-resistant boundary point
+
+#rightmost point within the lowest OBSTACLE_BAND_PX of the contour (red: robot passes on its right)
+def bottom_right_point(contour, band_px=OBSTACLE_BAND_PX):
+    pts = contour.reshape(-1, 2)
+    max_y = int(pts[:, 1].max())
+    band = pts[pts[:, 1] >= max_y - band_px]
+    idx = int(np.argmax(band[:, 0]))
+    return (int(band[idx, 0]), int(band[idx, 1]))
+
+#leftmost point within the lowest OBSTACLE_BAND_PX of the contour (green: robot passes on its left)
+def bottom_left_point(contour, band_px=OBSTACLE_BAND_PX):
+    pts = contour.reshape(-1, 2)
+    max_y = int(pts[:, 1].max())
+    band = pts[pts[:, 1] >= max_y - band_px]
+    idx = int(np.argmin(band[:, 0]))
+    return (int(band[idx, 0]), int(band[idx, 1]))
+
+#right-align debug text against the image's right edge (used for the obstacle status block)
+def put_text_right_aligned(image, text, y, right_margin=10, font=cv2.FONT_HERSHEY_SIMPLEX, scale=0.6, color=(0,255,255), thickness=2):
+    (text_w, _), _ = cv2.getTextSize(text, font, scale, thickness)
+    x = image.shape[1] - text_w - right_margin
+    cv2.putText(image, text, (x, y), font, scale, color, thickness)
+
+#closest obstacle = whichever red/green contour reaches furthest down the image
+def find_closest_obstacle(red_contours, green_contours):
+    best = None  # (max_y, color_name, contour)
+    for c in red_contours:
+        y = int(c[:, :, 1].max())
+        if best is None or y > best[0]:
+            best = (y, 'RED', c)
+    for c in green_contours:
+        y = int(c[:, :, 1].max())
+        if best is None or y > best[0]:
+            best = (y, 'GREEN', c)
+    return (best[1], best[2]) if best is not None else None
+
 #What direction are we going? CW or CCW?
 CW = 0
 CCW = 0
@@ -50,21 +88,34 @@ highBlue = np.array([130, 255, 255])
 lowOrange  = np.array([5, 100, 75])
 highOrange = np.array([35, 255, 255])
 
+#OBSTACLE CHALLENGE COLOR VALUES (starting points - tune on field/lighting)
+# Red wraps around hue 0/180, so two ranges are combined (mirrors Frame.getContour's isRed pattern)
+lowRed1  = np.array([0, 100, 60])
+highRed1 = np.array([10, 255, 255])
+lowRed2  = np.array([170, 100, 60])
+highRed2 = np.array([180, 255, 255])
+
+lowGreen  = np.array([40, 70, 50])
+highGreen = np.array([85, 255, 255])
+
+lowMagenta  = np.array([140, 70, 50])
+highMagenta = np.array([170, 255, 255])
+
 #MICROBIT VALUES
 steering_value = 0 # Calculated steering value to add or subtract from center value
 center = 95 #center value for steering, adjust as needed (was 85)
-speed_value = 0 # Speed, 160 is lowest, 255 is highest
+speed_value = 220 # Speed, 160 is lowest, 255 is highest
 on = 1
 
 #Last sent message sent to serial to compare against current message to avoid sending duplicates
 last_message = ""
 
-#wall error kp steering, kp - 0.45
-kp = 0.5
+#wall error kp steering, kp - 0.5
+kp = 0.65
 kd = 0.22
 previous_error = 0 
 
-alpha = 0 # slightly stronger smoothing
+alpha = 0.5 # slightly stronger smoothing
 max_steering_correction = 40
 
 # Lane estimation for partial visibility handling
@@ -105,30 +156,55 @@ while True:
     
 
     #create frames
-    # Bottom scan for walls (black) across much of the image width
+    # Bottom scan for walls (black + magenta parking block, treated as one wall surface)
     #x1 = 20
-    wall_frame = Frame(20,150, 620, 260, image, [lowBlack], [highBlack], frameColor=(255, 0, 0))
+    wall_frame = Frame(20,150, 620, 260, image, [lowBlack, lowMagenta], [highBlack, highMagenta], frameColor=(255, 0, 0))
     # keep existing bottom color checks for lap/dir detection
     bottom_frame = Frame(120, 370, 520, 470, image, [lowBlue, lowOrange], [highBlue,  highOrange])
     bluePx = bottom_frame.getContour(0, contourColor=(255, 85, 0)) #blue
     orangePx = bottom_frame.getContour(1, contourColor =(0, 128, 255)) #orange
 
-    block_frame = Frame(20, 370, 520, 470, image, [lowBlue, lowOrange], [highBlue,  highOrange])
-    redPx = block_frame.getContour(0, contourColor=(255, 85, 0)) #red
-    greenPx = block_frame.getContour(1, contourColor=(0, 255, 0)) #green
-
     # # Straight wall detection (black) frame for turning
     # front_frame = Frame(250, 200, 390, 270, image, [lowBlack], [highBlack], frameColor = (255,0,0))
     # frontBlack = front_frame.getContour(0, contourColor=(0,255,0))
 
-    # Use split horizontal scanline to find inner left/right wall edges (black)
+    # Use split horizontal scanline to find inner left/right wall edges (black or magenta)
     # Skip wall detection entirely while turning so it can't influence steering/state decisions
     if state != TURNING:
-        left_x, right_x, wall_mask, scan_y1, scan_y2 = wall_frame.getInnerEdgesSplit(color=0, scan_height=40, col_threshold=20, contourColor=(0,255,0))
+        left_x, right_x, wall_mask, scan_y1, scan_y2 = wall_frame.getInnerEdgesSplit(color=[0,1], scan_height=40, col_threshold=20, contourColor=(255,255,255))
     else:
         left_x, right_x, wall_mask = None, None, None
         scan_y1, scan_y2 = wall_frame.y1, wall_frame.y2
 
+    #-------------------------------------------------------------------------------------
+    # OBSTACLE DETECTION (Obstacle Challenge extension) - larger ROI than wall_frame so
+    # red/green obstacles are picked up earlier. Runs every frame so debug overlays and
+    # side_wall_missing (computed below from the raw wall left_x/right_x) are unaffected.
+    # flat color list: 0=red(low hue), 1=green, 2=magenta, 3=red(high hue wraparound)
+    obstacle_frame = Frame(0, 100, 640, 300, image, [lowRed1, lowGreen, lowMagenta, lowRed2], [highRed1, highGreen, highMagenta, highRed2], frameColor=(0,255,255))
+    cv2.rectangle(image, (obstacle_frame.x1, obstacle_frame.y1), (obstacle_frame.x2, obstacle_frame.y2), (0,255,255), 2)
+
+    red_contours = obstacle_frame.getColorContours([0,3], min_area=200)  # combined red hue ranges
+    green_contours = obstacle_frame.getColorContours(1, min_area=200)
+    magenta_contours = obstacle_frame.getColorContours(2, min_area=200)  # debug only, not used for steering
+
+    cv2.drawContours(image, red_contours, -1, (0,0,255), 2)
+    cv2.drawContours(image, green_contours, -1, (0,255,0), 2)
+    cv2.drawContours(image, magenta_contours, -1, (255,0,255), 2)
+
+    closest_obstacle = find_closest_obstacle(red_contours, green_contours)
+    obstacle_mode = 'NORMAL'
+    obstacle_point = None
+    if closest_obstacle is not None:
+        obstacle_mode, obstacle_contour = closest_obstacle
+        # obstacle_point is already in full-image coordinates (getColorContours shifts contours
+        # by the frame's own x1/y1), matching left_x/right_x from getInnerEdgesSplit.
+        obstacle_point = bottom_right_point(obstacle_contour) if obstacle_mode == 'RED' else bottom_left_point(obstacle_contour)
+        highlight_color = (0,0,255) if obstacle_mode == 'RED' else (0,255,0)  # match the block's own color
+        cv2.drawContours(image, [obstacle_contour], -1, highlight_color, 3)  # highlight selected obstacle
+        # (the obstacle's exact boundary point is drawn once, as part of the corridor line below,
+        # to avoid a second redundant marker at a possibly-inconsistent position)
+    #-------------------------------------------------------------------------------------
 
     #count orange line when detected (laps)
     if (orangePx > 1000) and (orangePx < 40000):
@@ -163,6 +239,21 @@ while True:
 
     if state == STRAIGHT:
         #------------------------------------------------------------------------------------------------------
+        # Obstacle avoidance: swap one corridor boundary for the closest obstacle's edge.
+        # Recalculated every frame, so the midpoint below slides as the obstacle grows.
+        # left_y/right_y track the TRUE full-image y of whichever point is active on each side
+        # (the wall's own scan row, or the obstacle's real detected point), so the corridor line
+        # drawn below always connects to the exact points the controller's left_x/right_x came from.
+        wall_scan_y = (scan_y1 + scan_y2) // 2
+        left_y, right_y = wall_scan_y, wall_scan_y
+
+        # red -> robot passes on the right, so red's boundary point replaces the LEFT wall,
+        # paired with the RIGHT wall's real inner edge; green -> mirror image, pairs with LEFT wall.
+        if obstacle_mode == 'RED' and obstacle_point is not None:
+            left_x, left_y = obstacle_point
+        elif obstacle_mode == 'GREEN' and obstacle_point is not None:
+            right_x, right_y = obstacle_point
+
         # Steering based on corridor center from inner edges with partial-visibility handling
         # Target/error are based on wall_frame's own x-bounds, not the full camera frame
         img_center = (wall_frame.x1 + wall_frame.x2) // 2
@@ -218,16 +309,33 @@ while True:
         # Dead zone (pixels) around image center where steering is suppressed
         dead_zone_px = 20  # configurable
 
-        # Draw debug overlays depending on detections
-        # inner-edge markers
-        if left_x is not None:
-            cv2.circle(image, (left_x, (scan_y1+scan_y2)//2), 6, (0,255,255), -1)    # left wall inner-edge
-        if right_x is not None:
-            cv2.circle(image, (right_x, (scan_y1+scan_y2)//2), 6, (255,0,255), -1)   # right wall inner-edge
+        # Draw debug overlays depending on detections.
+        # detection_mode == 'both' means left_x/right_x are both real (wall-detected or
+        # obstacle-derived) points - draw the corridor line/midpoint at their true full-image
+        # (x,y) locations. Any other mode means a wall is genuinely missing and corridor_center
+        # came from the inferred wall_frame edge (drawn above), so overlays fall back to the
+        # original Open Challenge scan-row visualization instead of inventing a second point.
+        if detection_mode == 'both':
+            cv2.circle(image, (left_x, left_y), 6, (0,255,255), -1)   # active left boundary (true point)
+            cv2.circle(image, (right_x, right_y), 6, (255,0,255), -1) # active right boundary (true point)
 
-        # corridor center and image center
-        cv2.circle(image, (int(corridor_center), (scan_y1+scan_y2)//2), 6, (0,255,0), -1) # corridor center
-        cv2.line(image, (img_center, scan_y1), (img_center, scan_y2), (255,255,255), 1) # image center line
+            # Corridor line: direct line between the two active boundary points - diagonal
+            # whenever the obstacle's true y differs from the wall's scan row.
+            cv2.line(image, (left_x, left_y), (right_x, right_y), (0,165,255), 2)
+
+            # True geometric midpoint of the corridor line - lies exactly halfway along it,
+            # and its x always equals corridor_center since that's the same left_x/right_x average.
+            mid_y = (left_y + right_y) // 2
+            cv2.circle(image, (int(corridor_center), mid_y), 6, (0,255,0), -1)
+        else:
+            mid_y = (scan_y1 + scan_y2) // 2
+            if left_x is not None:
+                cv2.circle(image, (left_x, mid_y), 6, (0,255,255), -1)
+            if right_x is not None:
+                cv2.circle(image, (right_x, mid_y), 6, (255,0,255), -1)
+            cv2.circle(image, (int(corridor_center), mid_y), 6, (0,255,0), -1)
+
+        cv2.line(image, (img_center, scan_y1), (img_center, scan_y2), (255,255,255), 1) # image center reference line
 
         # Dead-zone rectangle centered at image center
         dz_x1 = img_center - dead_zone_px
@@ -240,8 +348,10 @@ while True:
         if abs(steering_error) <= dead_zone_px:
             steering_error = 0
 
-        # Draw error line (image center -> corridor center)
-        cv2.line(image, (img_center, (scan_y1+scan_y2)//2), (int(corridor_center), (scan_y1+scan_y2)//2), (0,0,255), 2)
+        # Steering error line: true image center -> calculated midpoint, and nothing else -
+        # same pattern as the existing Open Challenge visualization, generalized to the true
+        # midpoint row (mid_y) instead of always assuming the wall scan row.
+        cv2.line(image, (img_center, mid_y), (int(corridor_center), mid_y), (0,0,255), 2)
 
         #check if it is turning
         if line_detected and side_wall_missing:
@@ -283,6 +393,9 @@ while True:
             line_detected = False
             # frontBlack_detected = False
             side_wall_missing = False
+            previous_error = 0
+            filtered_center = None
+            turn_delay_time = None
             print("EXIT TURN")
     
 
@@ -308,6 +421,11 @@ while True:
     cv2.putText(image, f"Steering: {steering_value}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
     cv2.putText(image, f"Direction: {'CW' if CW else 'CCW'}", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
     cv2.putText(image, f"State: {state}", (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
+    #obstacle challenge debug text (top right)
+    put_text_right_aligned(image, f"Obstacle Mode: {obstacle_mode}", 30)
+    put_text_right_aligned(image, f"Midpoint X: {corridor_center}", 55)
+    put_text_right_aligned(image, f"Steer Error: {steering_error}", 80)
 
     #send values to micrbit through serial connections
     print(f"Steering: {steering_value}, Speed: {speed_value}, ON?: {on}, LINES: {lines}, STATE: {state}")
