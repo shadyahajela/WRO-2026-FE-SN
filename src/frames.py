@@ -139,13 +139,20 @@ class Frame:
         left_roi = self.image[scan_y1:scan_y2, self.x1:mid_col]
         right_roi = self.image[scan_y1:scan_y2, mid_col:self.x2]
 
+        # Allow `color` to be a single index or a list/tuple of indices to OR together
+        # (e.g. black + magenta both counting as "wall")
+        color_indices = color if isinstance(color, (list, tuple)) else [color]
+
         # Helper to process a roi and return inner edge and its mask
         def _process_roi(roi, find_rightmost, area_thresh):
             if roi.size == 0:
                 return None, None
             blurred = cv2.GaussianBlur(roi, (7, 7), 0)
             hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
-            mask = cv2.inRange(hsv, self.lowColor[color], self.highColor[color])
+            mask = None
+            for idx in color_indices:
+                m = cv2.inRange(hsv, self.lowColor[idx], self.highColor[idx])
+                mask = m if mask is None else cv2.bitwise_or(mask, m)
             kernel = np.ones((3, 3), np.uint8)
             mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
             contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -204,7 +211,93 @@ class Frame:
         return left_x, right_x, full_mask, scan_y1, scan_y2
 
 
-    
+    def getColorContours(self, color, min_area=200):
+        """
+        Generic contour finder scoped to this frame's ROI for a color index (or a
+        list of indices to OR together, e.g. for a hue-wraparound color like red).
+        Returns a list of contours (each shifted into full-image coordinates) whose
+        area is >= min_area. Does not draw anything - callers own their own debug
+        visualization so the same detection can be reused for different purposes.
+        """
+        roi = self.image[self.y1:self.y2, self.x1:self.x2]
+        if roi.size == 0:
+            return []
+
+        color_indices = color if isinstance(color, (list, tuple)) else [color]
+
+        blurred = cv2.GaussianBlur(roi, (7, 7), 0)
+        hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+        mask = None
+        for idx in color_indices:
+            m = cv2.inRange(hsv, self.lowColor[idx], self.highColor[idx])
+            mask = m if mask is None else cv2.bitwise_or(mask, m)
+        kernel = np.ones((3, 3), np.uint8)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = [c for c in contours if cv2.contourArea(c) >= min_area]
+
+        # Shift into full-image coordinates so results compose with other Frame outputs
+        offset = np.array([[[self.x1, self.y1]]])
+        return [c + offset for c in contours]
+
+
+
+    def getInnerEdgeAtRow(self, color, y_center, side, band_height=30, min_contour_area=40):
+        """
+        Like the single-side logic inside getInnerEdgesSplit, but scans a band centered on a
+        caller-supplied y (full-image coordinates) instead of this frame's own bottom band.
+        Lets a wall edge be re-measured at whatever row an obstacle's boundary point sits on,
+        so the corridor width reflects the wall gap at that distance rather than a fixed row.
+
+        side: 'left' or 'right' - which half of this frame's x1:x2 width to search, same split
+        convention as getInnerEdgesSplit (rightmost pixel of the left half = inner edge, and
+        vice versa).
+
+        Returns the edge x in full-image coordinates, or None if not found in that band.
+        """
+        total_width = self.x2 - self.x1
+        if total_width <= 0:
+            return None
+
+        half = band_height // 2
+        row_y1 = max(0, y_center - half)
+        row_y2 = min(self.image.shape[0], y_center + half)
+        if row_y2 <= row_y1:
+            return None
+
+        mid_col = self.x1 + total_width // 2
+        if side == 'left':
+            roi = self.image[row_y1:row_y2, self.x1:mid_col]
+        else:
+            roi = self.image[row_y1:row_y2, mid_col:self.x2]
+        if roi.size == 0:
+            return None
+
+        color_indices = color if isinstance(color, (list, tuple)) else [color]
+        blurred = cv2.GaussianBlur(roi, (7, 7), 0)
+        hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+        mask = None
+        for idx in color_indices:
+            m = cv2.inRange(hsv, self.lowColor[idx], self.highColor[idx])
+            mask = m if mask is None else cv2.bitwise_or(mask, m)
+        kernel = np.ones((3, 3), np.uint8)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if not contours:
+            return None
+        largest = max(contours, key=cv2.contourArea)
+        if cv2.contourArea(largest) < min_contour_area:
+            return None
+
+        xs = largest[:, :, 0].reshape(-1)
+        if side == 'left':
+            return self.x1 + int(xs.max())   # rightmost pixel of the left half = inner edge
+        else:
+            return mid_col + int(xs.min())   # leftmost pixel of the right half = inner edge
+
+
     def getWallEdgesSplit(self, color=0, scan_height=30, col_threshold=20,
                       contourColor=(0, 255, 0)):
 

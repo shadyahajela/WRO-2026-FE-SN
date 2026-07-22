@@ -52,7 +52,8 @@ highOrange = np.array([35, 255, 255])
 
 #MICROBIT VALUES
 steering_value = 0 # Calculated steering value to add or subtract from center value
-center = 95 #center value for steering, adjust as needed (was 85)
+center = 80 #center value for steering, adjust as needed (was 85)
+steering_margin = 40 
 speed_value = 255 # Speed, 160 is lowest, 255 is highest
 on = 1
 
@@ -64,7 +65,7 @@ kp = 0.5
 kd = 0.22
 previous_error = 0 
 
-alpha = 0 # slightly stronger smoothing
+alpha = 0.5 # slightly stronger smoothing
 max_steering_correction = 40
 
 # Lane estimation for partial visibility handling
@@ -81,8 +82,8 @@ filtered_center = None
 start_time_line = time.time()
 start_time_finshed = 0
 
-turn_delay = 0.5  # seconds to wait before confirming a turn
-turn_execution_time = 0.65  # seconds to execute the turn
+turn_delay = 0.25  # seconds to wait before confirming a turn
+turn_execution_time = 0.4  # seconds to execute the turn
 
 turn_delay_time = None
 turning_start_time = 0
@@ -262,6 +263,18 @@ while True:
             previous_error = steering_error  # update for next loop
 
             steering_error = round(steering_error)
+
+
+            error_abs = abs(steering_error)
+            if error_abs < 10:
+                speed_value = 230
+            elif error_abs < 40:
+                speed_value = 210
+            elif error_abs < 60:
+                speed_value = 190
+            else:
+                speed_value = 170
+
             print(f"Mode: {detection_mode}, Corridor center: {corridor_center}, Img center: {img_center}, Error: {steering_error}, Steering Value: {steering_value}")
             steering_value = round(steering_value / 5) * 5 #round to nearest 5 for smoother steering
             print(f"Rounded Steering Value: {steering_value}")
@@ -279,6 +292,9 @@ while True:
             line_detected = False
             # frontBlack_detected = False
             side_wall_missing = False
+            previous_error = 0
+            filtered_center = None
+            turn_delay_time = None
             print("EXIT TURN")
     
 
@@ -293,11 +309,14 @@ while True:
     # Hello Shadyta, this is your coach suffering with the servo
     #Straight angle is 85 dont question why :)
     #max andgles will be 135 and 55 
-    if steering_value > 125:
-        steering_value = 125
 
-    elif steering_value < 55:
-        steering_value = 55
+    #120
+    if steering_value > (center + steering_margin):
+        steering_value = (center + steering_margin)
+
+    #40
+    elif steering_value < (center - steering_margin):
+        steering_value = (center - steering_margin)
     
     #print values on camera feed
     cv2.putText(image, f"Lap: {math.ceil((lines/4))}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
