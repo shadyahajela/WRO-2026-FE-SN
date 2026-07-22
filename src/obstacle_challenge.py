@@ -31,7 +31,8 @@ import math
 
 #OBSTACLE CHALLENGE HELPERS
 OBSTACLE_BAND_PX = 15  # examine the lowest ~10-20px of the contour for a jitter-resistant boundary point
-OBSTACLE_MIN_AREA_PX = 2000  # ignore contours smaller than this many pixels - too far away to act on yet
+OBSTACLE_MIN_AREA_PX = 2500  # ignore contours smaller than this many pixels - too far away to act on yet
+OBSTACLE_TURN = 4000
 
 #rightmost point within the lowest OBSTACLE_BAND_PX of the contour (red: robot passes on its right)
 def bottom_right_point(contour, band_px=OBSTACLE_BAND_PX):
@@ -119,15 +120,16 @@ highMagenta = np.array([165, 220, 220])
 steering_value = 0 # Calculated steering value to add or subtract from center value
 center = 80 #center value for steering, adjust as needed (was 85) - matches open_challenge.py's tuned straight angle
 steering_margin = 40
-speed_value = 230 # Speed, 160 is lowest, 255 is highest
+speed_value = 160 # Speed, 160 is lowest, 255 is highest
 on = 1
 
 #Last sent message sent to serial to compare against current message to avoid sending duplicates
 last_message = ""
 
-#wall error kp steering, kp - 0.5
-kp = 0.6
-kd = 0.22
+#wall error kp steering, kp - 0.57
+kp = 0.555
+kd = 0.35
+#0.22
 previous_error = 0 
 
 alpha = 0.5 # slightly stronger smoothing
@@ -150,8 +152,8 @@ filtered_obstacle_y = None
 start_time_line = time.time()
 start_time_finshed = 0
 
-turn_delay = 0.5  # seconds to wait before confirming a turn
-turn_execution_time = 0.5  # seconds to execute the turn 0.65
+turn_delay = 0.525  # seconds to wait before confirming a turn 0.5
+turn_execution_time = 0.4  # seconds to execute the turn 0.65, 0.15
 
 turn_delay_time = None
 turning_start_time = 0
@@ -162,6 +164,13 @@ TURNING = 1
 
 state = STRAIGHT
 indicator = "STRA"
+
+#wall_frame values
+#obstacle frame values  0, 100, 640, 300
+wfx1 = 20
+wfy1 = 220
+wfx2 = 620
+wfy2 = 260
 
 #main loop to show camera feed
 while True:
@@ -176,7 +185,7 @@ while True:
     #create frames
     # Bottom scan for walls (black + magenta parking block, treated as one wall surface)
     #x1 = 20
-    wall_frame = Frame(20,150, 620, 260, image, [lowBlack, lowMagenta], [highBlack, highMagenta], frameColor=(255, 0, 0))
+    wall_frame = Frame(wfx1, wfy1, wfx2, wfy2, image, [lowBlack, lowMagenta], [highBlack, highMagenta], frameColor=(255, 0, 0))
     # keep existing bottom color checks for lap/dir detection
     bottom_frame = Frame(120, 370, 520, 470, image, [lowBlue, lowOrange], [highBlue,  highOrange])
     bluePx = bottom_frame.getContour(0, contourColor=(255, 85, 0)) #blue
@@ -189,7 +198,7 @@ while True:
     # Use split horizontal scanline to find inner left/right wall edges (black or magenta)
     # Skip wall detection entirely while turning so it can't influence steering/state decisions
     if state != TURNING:
-        left_x, right_x, wall_mask, scan_y1, scan_y2 = wall_frame.getInnerEdgesSplit(color=[0,1], scan_height=40, col_threshold=20, contourColor=(255,255,255))
+        left_x, right_x, wall_mask, scan_y1, scan_y2 = wall_frame.getInnerEdgesSplit(color=[0,1], col_threshold=20, contourColor=(255,255,255))
     else:
         left_x, right_x, wall_mask = None, None, None
         scan_y1, scan_y2 = wall_frame.y1, wall_frame.y2
@@ -200,7 +209,16 @@ while True:
     # side_wall_missing (computed below from the raw wall left_x/right_x) are unaffected.
     # flat color list: 0=red(low hue), 1=green, 2=magenta, 3=red(high hue wraparound)
     obstacle_frame = Frame(0, 100, 640, 300, image, [lowRed1, lowGreen, lowMagenta, lowRed2], [highRed1, highGreen, highMagenta, highRed2], frameColor=(0,255,255))
-    cv2.rectangle(image, (obstacle_frame.x1, obstacle_frame.y1), (obstacle_frame.x2, obstacle_frame.y2), (0,255,255), 2)
+    #cv2.rectangle(image, (obstacle_frame.x1, obstacle_frame.y1), (obstacle_frame.x2, obstacle_frame.y2), (0,255,255), 2)
+
+    # count raw red/green pixels in the obstacle ROI
+    greenPx = obstacle_frame.getContour(1, contourColor=(0,255,0))
+    hsv_obs_roi = cv2.cvtColor(image[obstacle_frame.y1:obstacle_frame.y2, obstacle_frame.x1:obstacle_frame.x2], cv2.COLOR_BGR2HSV)
+    red_mask = cv2.bitwise_or(
+        cv2.inRange(hsv_obs_roi, lowRed1, highRed1),
+        cv2.inRange(hsv_obs_roi, lowRed2, highRed2)
+    )
+    redPx = cv2.countNonZero(red_mask)
 
     # min_area gates by actual contour pixel count - a block must be at least
     # OBSTACLE_MIN_AREA_PX pixels to be detected at all (too far away otherwise).
@@ -271,6 +289,16 @@ while True:
             # flicker frame to frame with contour-detection noise; ox stays raw since the
             # band-based bottom_right_point/bottom_left_point selection already stabilizes it.
             ox, oy_raw = obstacle_point
+
+            #if it is lager han the min obstacle area size
+            if (redPx > OBSTACLE_MIN_AREA_PX) or (greenPx > OBSTACLE_MIN_AREA_PX):
+                #wall frame if there is an obstacle (same as obstacle frame) 
+                #obstacle frame values  0, 100, 640, 300
+                wfx1 = 0
+                wfy1 = 100
+                wfx2 = 640
+                wfy2 = 300
+
             if filtered_obstacle_y is None:
                 filtered_obstacle_y = oy_raw
             filtered_obstacle_y = (obstacle_y_alpha * oy_raw) + ((1 - obstacle_y_alpha) * filtered_obstacle_y)
@@ -290,6 +318,12 @@ while True:
                     dynamic_row_y = oy
         else:
             filtered_obstacle_y = None
+
+            #wall_frame if there are no obstacles
+            wfx1 = 20
+            wfy1 = 220
+            wfx2 = 620
+            wfy2 = 260
 
         # Steering based on corridor center from inner edges with partial-visibility handling
         # Target/error are based on wall_frame's own x-bounds, not the full camera frame
@@ -326,9 +360,23 @@ while True:
             detection_mode = 'right_only'
 
         else:
-            # Neither wall visible: fall back to last known corridor center or wall_frame center
-            corridor_center = img_center
-            detection_mode = 'none'
+            # Neither wall visible: if there's a block, infer the missing wall from the frame edge
+            if obstacle_point is not None and obstacle_mode == 'RED':
+                left_x = obstacle_point[0]
+                inferred_right = wall_frame.x2
+                corridor_center = (left_x + inferred_right) // 2
+                cv2.line(image, (int(inferred_right), scan_y1), (int(inferred_right), scan_y2), (0,180,0), 1)
+                detection_mode = 'red_block_only'
+            elif obstacle_point is not None and obstacle_mode == 'GREEN':
+                right_x = obstacle_point[0]
+                inferred_left = wall_frame.x1
+                corridor_center = (right_x + inferred_left) // 2
+                cv2.line(image, (int(inferred_left), scan_y1), (int(inferred_left), scan_y2), (0,180,0), 1)
+                detection_mode = 'green_block_only'
+            else:
+                # Neither wall nor block is visible; fall back to image center.
+                corridor_center = img_center
+                detection_mode = 'none'
 
         
         # Compute steering error from corridor center
@@ -429,13 +477,23 @@ while True:
             filtered_obstacle_y = None
             turn_delay_time = None
             print("EXIT TURN")
+        elif (redPx > OBSTACLE_TURN) or (greenPx > OBSTACLE_TURN): # if it sees blocks while turning
+            state = STRAIGHT
+            line_detected = False
+            # frontBlack_detected = False
+            side_wall_missing = False
+            previous_error = 0
+            filtered_center = None
+            filtered_obstacle_y = None
+            turn_delay_time = None
+            print("EXIT TURN")
     
 
     #stop when see all the orange line
     if lines >=  12:
         if start_time_finshed == 0:
             start_time_finshed = time.time() #start timer when all orange lines are detected
-        if time.time() - start_time_finshed > 5: #if all orange lines are detected for more than 3 seconds, stop the car
+        if time.time() - start_time_finshed > 3: #if all orange lines are detected for more than 3 seconds, stop the car
             speed_value = 0 
 
 

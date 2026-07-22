@@ -115,17 +115,22 @@ class Frame:
 
     #     return left_x, right_x, mask, scan_y1, scan_y2
 
-    def getInnerEdgesSplit(self, color=0, scan_height=30, col_threshold=20, contourColor=(0, 255, 0), min_contour_area=150):
+    def getInnerEdgesSplit(self, color=0, scan_height=None, col_threshold=20, contourColor=(0, 255, 0), min_contour_area=150):
         """
-        Split the bottom scanning band into a left ROI and a right ROI, find the largest
-        contour in each ROI for the requested color, and return the inner edges:
+        Split the frame into a left ROI and a right ROI, find the largest contour in each
+        ROI for the requested color, and return the inner edges:
         - left inner edge: the rightmost x of the largest left contour (closest to center)
         - right inner edge: the leftmost x of the largest right contour (closest to center)
 
+        By default, this scans the full frame height. If scan_height is provided, it scans
+        only the bottom scan_height pixels of the frame.
+
         Returns (left_x, right_x, full_mask, scan_y1, scan_y2) where left_x/right_x may be None.
         """
-        # Determine scanning region (last `scan_height` pixels of this frame)
-        scan_y1 = max(self.y1, self.y2 - scan_height)
+        if scan_height is None:
+            scan_y1 = self.y1
+        else:
+            scan_y1 = max(self.y1, self.y2 - scan_height)
         scan_y2 = self.y2
 
         # ROI widths and mid column
