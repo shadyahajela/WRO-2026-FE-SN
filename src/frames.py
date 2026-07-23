@@ -5,7 +5,7 @@ import cv2
 
 class Frame:
     # constructor
-    def __init__(self, x1, y1, x2, y2, image, lowColor, highColor, frameColor = (0, 0, 255)):
+    def __init__(self, x1, y1, x2, y2, image, lowColor, highColor, frameColor = (0, 0, 255), leftZoneX=None, rightZoneX=None):
         self.x1 = x1
         self.y1 = y1
         self.x2 = x2
@@ -15,6 +15,14 @@ class Frame:
         self.highColor = highColor  # List of high color values or single tuple
         self.mask = None
         self.frameColor = frameColor
+
+        # Manual left/right detection-zone split (for getInnerEdgesSplit/getInnerEdgeAtRow):
+        # x1..leftZoneX is scanned as the left zone, rightZoneX..x2 as the right zone, and
+        # leftZoneX..rightZoneX in between is a dead zone that is never scanned. Defaults to
+        # the frame's own midpoint (no gap) when not given, matching the old auto-bisect behavior.
+        mid = x1 + (x2 - x1) // 2
+        self.leftZoneX = mid if leftZoneX is None else max(x1, min(leftZoneX, x2))
+        self.rightZoneX = mid if rightZoneX is None else max(self.leftZoneX, min(rightZoneX, x2))
 
     # Function to get contours and count pixels of a specific color within the frame
     def getContour(self, color = 0, isRed = False, contourColor=(0, 0, 255)):
@@ -133,16 +141,15 @@ class Frame:
             scan_y1 = max(self.y1, self.y2 - scan_height)
         scan_y2 = self.y2
 
-        # ROI widths and mid column
+        # ROI widths and manual left/right zone split
         total_width = self.x2 - self.x1
         if total_width <= 0 or scan_y2 <= scan_y1:
             return None, None, None, scan_y1, scan_y2
 
-        mid_col = self.x1 + total_width // 2
-
-        # Left and right ROI slices
-        left_roi = self.image[scan_y1:scan_y2, self.x1:mid_col]
-        right_roi = self.image[scan_y1:scan_y2, mid_col:self.x2]
+        # Left and right ROI slices, with a dead zone (self.leftZoneX..self.rightZoneX) between
+        # them that is never scanned
+        left_roi = self.image[scan_y1:scan_y2, self.x1:self.leftZoneX]
+        right_roi = self.image[scan_y1:scan_y2, self.rightZoneX:self.x2]
 
         # Allow `color` to be a single index or a list/tuple of indices to OR together
         # (e.g. black + magenta both counting as "wall")
@@ -175,16 +182,18 @@ class Frame:
         left_edge_local, left_mask = _process_roi(left_roi, find_rightmost=True, area_thresh=min_contour_area)
         right_edge_local, right_mask = _process_roi(right_roi, find_rightmost=False, area_thresh=min_contour_area)
 
-        # Build a combined mask that spans the full frame ROI width
+        # Build a combined mask that spans the full frame ROI width (dead zone columns stay zero)
         full_mask = np.zeros((scan_y2 - scan_y1, total_width), dtype=np.uint8)
         if left_mask is not None:
-            full_mask[:, :mid_col - self.x1] = left_mask
+            full_mask[:, :self.leftZoneX - self.x1] = left_mask
         if right_mask is not None:
-            full_mask[:, mid_col - self.x1:] = right_mask
+            full_mask[:, self.rightZoneX - self.x1:] = right_mask
 
-        # Visual overlays: draw the left and right ROI rectangles
-        cv2.rectangle(self.image, (self.x1, scan_y1), (mid_col, scan_y2), (255, 200, 0), 1)
-        cv2.rectangle(self.image, (mid_col, scan_y1), (self.x2, scan_y2), (0, 200, 255), 1)
+        # Visual overlays: draw the left/right ROI rectangles and the dead zone between them
+        cv2.rectangle(self.image, (self.x1, scan_y1), (self.leftZoneX, scan_y2), (255, 200, 0), 1)
+        cv2.rectangle(self.image, (self.rightZoneX, scan_y1), (self.x2, scan_y2), (0, 200, 255), 1)
+        if self.rightZoneX > self.leftZoneX:
+            cv2.rectangle(self.image, (self.leftZoneX, scan_y1), (self.rightZoneX, scan_y2), (120, 120, 120), 1)
 
         left_x = None
         right_x = None
@@ -197,18 +206,18 @@ class Frame:
             # draw contours for debugging
             contours_l, _ = cv2.findContours(left_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             if contours_l:
-                cv2.drawContours(self.image[scan_y1:scan_y2, self.x1:mid_col], contours_l, -1, contourColor, 2)
+                cv2.drawContours(self.image[scan_y1:scan_y2, self.x1:self.leftZoneX], contours_l, -1, contourColor, 2)
 
         # If right contour found, draw it (offset when drawing into combined ROI)
         if right_edge_local is not None:
-            right_x = mid_col + right_edge_local
+            right_x = self.rightZoneX + right_edge_local
             cv2.line(self.image, (right_x, scan_y1), (right_x, scan_y2), contourColor, 2)
             contours_r, _ = cv2.findContours(right_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             if contours_r:
-                # draw into combined ROI area (offset columns by mid_col - self.x1)
+                # draw into combined ROI area (offset columns by rightZoneX - x1)
                 draw_area = self.image[scan_y1:scan_y2, self.x1:self.x2]
                 shifted = []
-                offset = mid_col - self.x1
+                offset = self.rightZoneX - self.x1
                 for c in contours_r:
                     shifted.append(c + np.array([[[offset, 0]]]))
                 cv2.drawContours(draw_area, shifted, -1, contourColor, 2)
@@ -255,9 +264,9 @@ class Frame:
         Lets a wall edge be re-measured at whatever row an obstacle's boundary point sits on,
         so the corridor width reflects the wall gap at that distance rather than a fixed row.
 
-        side: 'left' or 'right' - which half of this frame's x1:x2 width to search, same split
-        convention as getInnerEdgesSplit (rightmost pixel of the left half = inner edge, and
-        vice versa).
+        side: 'left' or 'right' - which zone of this frame's x1:x2 width to search, same
+        leftZoneX/rightZoneX split convention as getInnerEdgesSplit (rightmost pixel of the
+        left zone = inner edge, and vice versa; the dead zone between them is never searched).
 
         Returns the edge x in full-image coordinates, or None if not found in that band.
         """
@@ -271,11 +280,10 @@ class Frame:
         if row_y2 <= row_y1:
             return None
 
-        mid_col = self.x1 + total_width // 2
         if side == 'left':
-            roi = self.image[row_y1:row_y2, self.x1:mid_col]
+            roi = self.image[row_y1:row_y2, self.x1:self.leftZoneX]
         else:
-            roi = self.image[row_y1:row_y2, mid_col:self.x2]
+            roi = self.image[row_y1:row_y2, self.rightZoneX:self.x2]
         if roi.size == 0:
             return None
 
@@ -298,9 +306,9 @@ class Frame:
 
         xs = largest[:, :, 0].reshape(-1)
         if side == 'left':
-            return self.x1 + int(xs.max())   # rightmost pixel of the left half = inner edge
+            return self.x1 + int(xs.max())   # rightmost pixel of the left zone = inner edge
         else:
-            return mid_col + int(xs.min())   # leftmost pixel of the right half = inner edge
+            return self.rightZoneX + int(xs.min())   # leftmost pixel of the right zone = inner edge
 
 
     def getWallEdgesSplit(self, color=0, scan_height=30, col_threshold=20,

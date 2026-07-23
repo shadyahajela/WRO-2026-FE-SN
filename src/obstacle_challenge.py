@@ -31,7 +31,7 @@ import math
 
 #OBSTACLE CHALLENGE HELPERS
 OBSTACLE_BAND_PX = 15  # examine the lowest ~10-20px of the contour for a jitter-resistant boundary point
-OBSTACLE_MIN_AREA_PX = 2500  # ignore contours smaller than this many pixels - too far away to act on yet
+OBSTACLE_MIN_AREA_PX = 1800  # ignore contours smaller than this many pixels - too far away to act on yet
 OBSTACLE_TURN = 4000
 
 #rightmost point within the lowest OBSTACLE_BAND_PX of the contour (red: robot passes on its right)
@@ -126,9 +126,9 @@ on = 1
 #Last sent message sent to serial to compare against current message to avoid sending duplicates
 last_message = ""
 
-#wall error kp steering, kp - 0.57
-kp = 0.555
-kd = 0.35
+#wall error kp steering, kp - 0.54, 0.52
+kp = 0.5
+kd = 0.22
 #0.22
 previous_error = 0 
 
@@ -153,7 +153,7 @@ start_time_line = time.time()
 start_time_finshed = 0
 
 turn_delay = 0.525  # seconds to wait before confirming a turn 0.5
-turn_execution_time = 0.4  # seconds to execute the turn 0.65, 0.15
+turn_execution_time = 0.4  # seconds to execute the turn 255 - 0.15. 160 - 0.4
 
 turn_delay_time = None
 turning_start_time = 0
@@ -172,6 +172,12 @@ wfy1 = 220
 wfx2 = 620
 wfy2 = 260
 
+# Wall detection dead zone: x-values between these two are NOT scanned for wall pixels.
+# Left detection zone = wfx1..wf_gap_left_x, right detection zone = wf_gap_right_x..wfx2.
+# Tune these by hand against the camera feed; set both equal for no gap.
+wf_gap_left_x = 220
+wf_gap_right_x = 420
+
 #main loop to show camera feed
 while True:
 
@@ -185,7 +191,7 @@ while True:
     #create frames
     # Bottom scan for walls (black + magenta parking block, treated as one wall surface)
     #x1 = 20
-    wall_frame = Frame(wfx1, wfy1, wfx2, wfy2, image, [lowBlack, lowMagenta], [highBlack, highMagenta], frameColor=(255, 0, 0))
+    wall_frame = Frame(wfx1, wfy1, wfx2, wfy2, image, [lowBlack, lowMagenta], [highBlack, highMagenta], frameColor=(255, 0, 0), leftZoneX=wf_gap_left_x, rightZoneX=wf_gap_right_x)
     # keep existing bottom color checks for lap/dir detection
     bottom_frame = Frame(120, 370, 520, 470, image, [lowBlue, lowOrange], [highBlue,  highOrange])
     bluePx = bottom_frame.getContour(0, contourColor=(255, 85, 0)) #blue
