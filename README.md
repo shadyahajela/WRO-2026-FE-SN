@@ -59,7 +59,54 @@ Drive train: A drive train is all the parts that transfer power from the motor t
 
 ### 1.4 Mounting  of components
 
-# 2. Power &
+# 2. Power & Sensor Architeture
+
+### 2.1 Power System Architecture
+
+### 2.2 Current Draw Reasoning 
+
+### 2.3 Sensor Selection and Justification
+
+### 2.4 Sensor Placement and Calibration
+
+### 2.5 Wiring Diagram
+
+# 3. Software Architecture
+
+### 3.1 Code Implementation 
+
+### 3.2 Modularity 
+
+### 3.3 Code Comments 
+
+### 3.4 State Machine 
+
+### 3.5 PID control
+
+### 3.6 Algorithm
+
+### 3.7 Lane Following
+
+### 3.8 Obstacle
+
+### 3.9 Parking
+
+### 3.10 Microcontroller code
+
+### 3.11 Testing / Tuning Process
+
+### 3.12 Performance Measurement 
+
+### 3.13 Flow charts
+
+# 4. Subsystem Thinking and Engineering Decisions
+
+### 4.1 Subsystem integration with constraints and tradeoffs
+
+### 4.2 Iteration Cycles With Reasoning
+
+### 4.3 Engineering Reasoning With Risk Analysis
+
 
 
 
