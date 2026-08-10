@@ -69,7 +69,7 @@ Objective:
 
 ### 2.1 Power System Architecture
 
-<img src="v-photos/ackerman steering.png" alt="Ackerman Steering">
+<img src="v-photos/Screenshot 2026-08-10 193454.png" alt="Ackerman Steering">
 
 ### 2.2 Current Draw Reasoning 
 
