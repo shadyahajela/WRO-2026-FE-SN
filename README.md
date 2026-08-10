@@ -57,8 +57,9 @@ Drive train: A drive train is all the parts that transfer power from the motor t
 
 ### 1.3 Motor selection/ speed reasoning
 
-### 
-# 2
+### 1.4 Mounting  of components
+
+# 2. Power &
 
 
 
