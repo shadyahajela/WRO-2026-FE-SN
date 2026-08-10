@@ -21,6 +21,15 @@ We are the Blue Lobsters, Niva, Jeevesh and Shadya. We are united by a passion f
 
 Our robot is called Jadoo which means magic in Hindi. The name comes from a popular movie character who is also an alien and can do Jadoo. The drive base of our robot kind of looked like an alien head, so we named it after our favorite alien character.
 
+**Dimensions**
+
+  Width: 12 cm                     
+  Length: 23 cm                    
+  Height: 17 cm (Without wire)      
+          20 cm (With Camera wire)  
+          
+The Width helps to get around tight areas and the height gives a low base with a more balanced center of gravity all while being easy to maneuver due to the length. 
+
 ### Robot images
 _*Add at end*
 
@@ -32,6 +41,26 @@ Build objectives:
 
 As per the rules, the car must have a steering mechanism and the rear axle driven by a motor.
 Our team also wanted the car to be stable and fast (and colorful if we can help it).
+
 ### 1.1 Chassis
 Steering: We use the Ackerman steering to turn accurately. The Ackerman steering is a design where the inside front wheel turns sharper than the outside front wheel when a car goes around a corner.
-<img src="ackerman steering.png" alt="Ackerman Steering">
+
+<img src="v-photos/ackerman steering.png" alt="Ackerman Steering">
+
+*This was an early prototype of the Ackerman Steering model before we added it to the first iteration of our Lego car chassis.*
+
+Drive train: A drive train is all the parts that transfer power from the motor to the rear wheels. These are the parts used
+  - Lego rubber wheels: The Lego wheels were the most available and efficient than printing wheels.
+  - WLTOYS 144001 differential: A differential is a drive that is controlled by one motor but can run both wheels independently. The particular differential is made of metal ensuring fool proof connections. 
+
+### 1.2 Drive/Steering choice
+
+### 1.3 Motor selection/ speed reasoning
+
+### 
+# 2
+
+
+
+
+
