@@ -34,3 +34,4 @@ As per the rules, the car must have a steering mechanism and the rear axle drive
 Our team also wanted the car to be stable and fast (and colorful if we can help it).
 ### 1.1 Chassis
 Steering: We use the Ackerman steering to turn accurately. The Ackerman steering is a design where the inside front wheel turns sharper than the outside front wheel when a car goes around a corner.
+<img src="ackerman steering.png" alt="Ackerman Steering">
