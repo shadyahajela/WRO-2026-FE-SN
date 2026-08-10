@@ -15,12 +15,22 @@ This repository contains engineering materials of a self-driven vehicle's model 
 
 ## Introduction
 
-_This part must be filled by participants with the technical clarifications about the code: which modules the code consists of, how they are related to the electromechanical components of the vehicle, and what is the process to build/compile/upload the code to the vehicle’s controllers._
+We are the Blue Lobsters, Niva, Jeevesh and Shadya. We are united by a passion for STEM, Electronics, coding and jalapeño poppers. We wanted to bring our jouney to many other with the same passions and inspire teenagers around the world. To us its more than just coding or building, its the experiences and connections along the way.
 
-## How to prepare the repo based on the template
+## Robot 
 
-_Remove this section before the first commit to the repository_
+Our robot is called Jadoo which means magic in Hindi. The name comes from a popular movie character who is also an alien and can do Jadoo. The drive base of our robot kind of looked like an alien head, so we named it after our favorite alien character.
 
-1. Clone this repo by using the `git clone` functionality.
-2. Remove `.git` directory
-3. [Initialize a new public repository on GitHub](https://github.com/new) by following instructions from "create a new repository on the command line" section (appeared after pressing "Create repository" button).
+### Robot images
+_*Add at end*
+
+# 1. Mobility & Mechanical Design
+
+To build a self-driving car we need to build a car.
+
+Build objectives:
+
+As per the rules, the car must have a steering mechanism and the rear axle driven by a motor.
+Our team also wanted the car to be stable and fast (and colorful if we can help it).
+### 1.1 Chassis
+Steering: We use the Ackerman steering to turn accurately. The Ackerman steering is a design where the inside front wheel turns sharper than the outside front wheel when a car goes around a corner.
