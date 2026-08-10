@@ -15,7 +15,7 @@ This repository contains engineering materials of a self-driven vehicle's model 
 
 ## Introduction
 
-We are the Blue Lobsters, Niva, Jeevesh and Shadya. We are united by a passion for STEM, Electronics, coding and jalapeño poppers. We wanted to bring our jouney to many other with the same passions and inspire teenagers around the world. To us its more than just coding or building, its the experiences and connections along the way.
+We are the Blue Lobsters, Niva, Jeevesh and Shadya. We are united by a passion for STEM, Electronics, coding and jalapeño poppers. We wanted to bring our jouney to many others with the same passions and inspire teenagers around the world. To us its more than just coding or building, its the experiences and connections along the way.
 
 ## Robot 
 
@@ -37,7 +37,7 @@ _*Add at end*
 
 To build a self-driving car we need to build a car.
 
-Build objectives:
+Objectives:
 
 As per the rules, the car must have a steering mechanism and the rear axle driven by a motor.
 Our team also wanted the car to be stable and fast (and colorful if we can help it).
@@ -59,9 +59,16 @@ Drive train: A drive train is all the parts that transfer power from the motor t
 
 ### 1.4 Mounting  of components
 
-# 2. Power & Sensor Architeture
+# 2. Power & Sensor Architecture
+
+For the car to know what its doing, we need input and power.
+
+Objective: 
+  - Incorporate camera sensor
+  - Create power system architecture for robot
 
 ### 2.1 Power System Architecture
+
 
 ### 2.2 Current Draw Reasoning 
 
