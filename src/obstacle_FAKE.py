@@ -43,14 +43,14 @@ highOrange = np.array([35, 255, 255])
 # highRed1 = np.array([4, 255, 255])
 # lowRed2  = np.array([165, 100, 60])
 # highRed2 = np.array([180, 255, 255])
- 
+
 lowRed1  = np.array([0, 128, 50])
 highRed1 = np.array([5, 255, 255])
 lowRed2  = np.array([170, 128, 50])
 highRed2 = np.array([180, 255, 255])
-        
-lowGreen  = np.array([40, 80, 60])
-highGreen = np.array([80, 255, 255])
+
+lowGreen  = np.array([40, 70, 50])
+highGreen = np.array([85, 255, 255])
 
 # lowMagenta  = np.array([140, 70, 50])
 # highMagenta = np.array([165, 220, 220])
@@ -61,14 +61,14 @@ highMagenta = np.array([168, 255, 255])
 steering_value = 0 # Calculated steering value to add or subtract from center value
 center = 100 #center value for steering, adjust as needed (was 85) - matches open_challenge.py's tuned straight angle
 steering_margin = 55
-speed_value = 160 # Speed, 160/135 is lowest, 255 is highest
+speed_value = 0 # Speed, 160/135 is lowest, 255 is highest
 on = 1
 
 #Last sent message sent to serial to compare against current message to avoid sending duplicates
 last_message = ""
 
 #wall error kp steering, kp - 0.54, 0.52
-kp = 0.32
+kp = 0.45
 kd = 0.22
 #0.22
 previous_error = 0 
@@ -101,10 +101,6 @@ turn_execution_time = 0.4  # seconds to execute the turn 255 - 0.15. 160/135 - 0
 turn_delay_time = None
 turning_start_time = 0
 
-CENTER_BLACK_FULL_PX = 95   # 100x100 center frame pixel count considered "mostly filled" with black (tune on field)
-block_force_turn_time = 2.0   # seconds to force-turn once the center frame fills
-block_force_turn_start = None
-
 #exit parkin
 leave_start_time = None
 leave_forward_time = 0.7      # seconds to drive forward before turning out of parking 0.3
@@ -117,21 +113,14 @@ leave_turn_time4 = 0.4
 saw_turn = None
 
 #OBSTACLE CHALLENGE HELPERS
-OBSTACLE_MIN_AREA_PX = 1000  # ignore contours smaller than this many pixels - too far away to act on yet
-OBSTACLE_TURN = 500
-
-EARLY_LINE_Y1 = 250
-EARLY_LINE_Y2 = 380   # sits above bottom_frame's own y-range (380-480), so the lap line is seen earlier/farther away
-EARLY_LINE_MIN_PX = 300  # tune on field, mirrors the 500 threshold already used to first decide CW/CCW
+OBSTACLE_MIN_AREA_PX = 1800  # ignore contours smaller than this many pixels - too far away to act on yet
+OBSTACLE_TURN = 10000
 
 #STATES
 STRAIGHT = 0
 TURNING = 1
-LEAVE = 2 
+LEAVE = 2
 PARK = 3
-WAIT = 4   # TURNING saw the block matching this direction's special case; drive straight until the center frame fills with black
-FORCE = 5  # force a hard turn for a fixed duration, then hand back to the normal algorithm
-TURN_STATES = (TURNING, WAIT, FORCE)  # states where wall detection should be skipped, same as TURNING
 
 state = STRAIGHT
 indicator = "STRA"
@@ -253,7 +242,7 @@ while True:
 
     # Use split horizontal scanline to find inner left/right wall edges (black or magenta)
     # Skip wall detection entirely while turning so it can't influence steering/state decisions
-    if state not in TURN_STATES:
+    if state != TURNING:
         left_x, right_x, wall_mask, scan_y1, scan_y2 = wall_frame.getInnerEdgesSplit(color=[0,1], col_threshold=20, contourColor=(255,255,255))
     else:
         left_x, right_x, wall_mask = None, None, None
@@ -341,9 +330,9 @@ while True:
             CW = 1
         elif 500 < bluePx < 10000:
             CCW = 1
-    elif state not in TURN_STATES and (CW == 1) and (CCW == 0):
+    elif state != TURNING and (CW == 1) and (CCW == 0):
         side_wall_missing = right_x is None
-    elif state not in TURN_STATES and (CW == 0) and (CCW == 1):
+    elif state != TURNING and (CW == 0) and (CCW == 1):
         side_wall_missing = left_x is None
 
     # if (lines >= 12) and (magentaPx >= 5000) and (state != PARK):
@@ -353,6 +342,7 @@ while True:
     #to see if we will turn soon (black frame, if it saw enough of the wall)
     # if (frontBlack > 2000):
     #     frontBlack_detected = True
+
     if state == STRAIGHT:
         #------------------------------------------------------------------------------------------------------
         # Obstacle avoidance: swap one corridor boundary for the closest obstacle's edge, and
@@ -363,9 +353,9 @@ while True:
         # the wall genuinely can't be found at that row.
         
         #since values change during getting out of parking
-        speed_value = 170
+        speed_value = 0
         on = 1
-         
+        
         dynamic_row_y = None
         if obstacle_mode in ('RED', 'GREEN') and obstacle_point is not None:
             # Smooth the obstacle's row (not its x) so the corridor line's height doesn't
@@ -515,30 +505,17 @@ while True:
         # as every other corridor marker above.
         cv2.line(image, (img_center, mid_y), (int(corridor_center), mid_y), (0,0,255), 2)
 
-        #see the lap line earlier (higher up) than bottom_frame, so there's time to check for the
-        #"wrong side" block before actually needing to turn - only start looking for the block
-        #once the line matching this direction has been spotted
-        early_line_frame = Frame(270, EARLY_LINE_Y1, 370, EARLY_LINE_Y2, image, [lowBlue, lowOrange], [highBlue, highOrange], frameColor=(0,200,200), source=image_source)
-        early_bluePx = early_line_frame.getContour(0, contourColor=(255,85,0))
-        early_orangePx = early_line_frame.getContour(1, contourColor=(0,128,255))
-
         #check if it is turning
-        if CW and (early_orangePx > EARLY_LINE_MIN_PX) and (greenPx > OBSTACLE_TURN):
-            state = WAIT
-            # print("************ TURN BLOCK WAIT (early GREEN)")
-        elif CCW and (early_bluePx > EARLY_LINE_MIN_PX) and (redPx > OBSTACLE_TURN):
-            state = WAIT
-            # print("TURN BLOCK WAIT (early RED)")
-        elif line_detected:
+        if line_detected and side_wall_missing:
             if turn_delay_time is None:
-                # print("Here")
+                print("Here")
                 turn_delay_time = time.time()
 
             if time.time() - turn_delay_time > turn_delay:
                 state = TURNING
                 turning_start_time = time.time()
                 turn_delay_time = None  # reset for next detection
-                # print("ENTER TURN")
+                print("ENTER TURN")
         else:
            
            # Reset if the condition is no longer true
@@ -551,9 +528,9 @@ while True:
             previous_error = steering_error  # update for next loop
 
             steering_error = round(steering_error)
-            # print(f"Mode: {detection_mode}, Corridor center: {corridor_center}, Img center: {img_center}, Error: {steering_error}, Steering Value: {steering_value}")
+            print(f"Mode: {detection_mode}, Corridor center: {corridor_center}, Img center: {img_center}, Error: {steering_error}, Steering Value: {steering_value}")
             steering_value = round(steering_value / 5) * 5 #round to nearest 5 for smoother steering
-            # print(f"Rounded Steering Value: {steering_value}")
+            print(f"Rounded Steering Value: {steering_value}")
 
     #------------------------------------------------------------------------------------------------------
     #if the state is turning
@@ -563,7 +540,7 @@ while True:
         elif CCW:
             steering_value = center - steering_margin
 
-        if (redPx > OBSTACLE_TURN) or (greenPx > OBSTACLE_TURN): # if it sees blocks while turning
+        if time.time() - turning_start_time > turn_execution_time: #if it has been turning for more than the execution time, go back to straight mode
             state = STRAIGHT
             line_detected = False
             # frontBlack_detected = False
@@ -572,8 +549,8 @@ while True:
             filtered_center = None
             filtered_obstacle_y = None
             turn_delay_time = None
-            # print("EXIT TURN")
-        elif time.time() - turning_start_time > turn_execution_time: #if it has been turning for more than the execution time, go back to straight mode
+            print("EXIT TURN")
+        elif (redPx > OBSTACLE_TURN) or (greenPx > OBSTACLE_TURN): # if it sees blocks while turning
             state = STRAIGHT
             line_detected = False
             # frontBlack_detected = False
@@ -582,43 +559,7 @@ while True:
             filtered_center = None
             filtered_obstacle_y = None
             turn_delay_time = None
-            # print("EXIT TURN")
-
-    #------------------------------------------------------------------------------------------------------
-    #saw the "wrong side" block early (during STRAIGHT): go straight until the center frame fills with black
-    elif state == WAIT:
-        if CW: 
-            steering_value = center-5  # keep going straight
-        if CCW:
-            steering_value = center+5  # keep going straight
-
-        print("################# bro")
-        center_frame = Frame(315, 235, 325, 245, image, [lowBlack], [highBlack], frameColor=(0,255,255), source=image_source)
-        centerBlackPx = center_frame.getContour(0, contourColor=(0,255,0))
-        print("^ ^ ^ ^ ^ ^ ^ ^ ^  Black Pixels - ", centerBlackPx)
-
-        if centerBlackPx >= CENTER_BLACK_FULL_PX:
-            state = FORCE
-            block_force_turn_start = time.time()
-            print("TURN BLOCK FORCE")
-
-    #------------------------------------------------------------------------------------------------------
-    #force a hard turn for a fixed duration, then hand back to the normal algorithm
-    elif state == FORCE:
-        if CW:
-            steering_value = center + steering_margin
-        elif CCW:
-            steering_value = center - steering_margin
-
-        if time.time() - block_force_turn_start > block_force_turn_time:
-            state = STRAIGHT
-            line_detected = False
-            side_wall_missing = False
-            previous_error = 0
-            filtered_center = None
-            filtered_obstacle_y = None
-            turn_delay_time = None
-            # print("EXIT TURN BLOCK")
+            print("EXIT TURN")
 
     #if the state is leaving parking (starts off in parking)
     elif state == LEAVE:
@@ -690,7 +631,7 @@ while True:
 
             if elapsed < leave_forward_time:
                 #phase 1: drive straight out for leave_forward_time seconds
-                speed_value = 135
+                speed_value = 0
                 steering_value = center - steering_margin
                 on = 1
             # elif elapsed < leave_forward_time + leave_turn_time:
@@ -753,10 +694,15 @@ while True:
     put_text_right_aligned(image, f"Steer Error: {steering_error}", 80)
 
     #send values to micrbit through serial connections
-    # print(f"Steering: {steering_value}, Speed: {speed_value}, ON?: {on}, LINES: {lines}, STATE: {state}")
-    # print(f"Line Detected: {line_detected}, Empty Wall: {side_wall_missing}, cw: {CW}, ccw: {CCW}\n")
+    print(f"Steering: {steering_value}, Speed: {speed_value}, ON?: {on}, LINES: {lines}, STATE: {state}")
+    print(f"Line Detected: {line_detected}, Empty Wall: {side_wall_missing}, cw: {CW}, ccw: {CCW}\n")
 
-    indicator = state
+    if state == STRAIGHT:
+        indicator = "STRA"
+    elif state == TURNING:
+        indicator = "TURN"
+    else:
+        indicator = "OOPS"
 
     message = (f"{steering_value} {speed_value} {on} {lines} {indicator}\n")
 

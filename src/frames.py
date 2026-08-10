@@ -5,12 +5,17 @@ import cv2
 
 class Frame:
     # constructor
-    def __init__(self, x1, y1, x2, y2, image, lowColor, highColor, frameColor = (0, 0, 255), leftZoneX=None, rightZoneX=None):
+    def __init__(self, x1, y1, x2, y2, image, lowColor, highColor, frameColor = (0, 0, 255), leftZoneX=None, rightZoneX=None, source=None):
         self.x1 = x1
         self.y1 = y1
         self.x2 = x2
         self.y2 = y2
         self.image = image
+        # pixels read for color thresholding/contour extraction come from `source` (a pristine
+        # pre-draw snapshot), while `self.image` stays the live buffer overlays get drawn onto -
+        # otherwise an earlier Frame's debug line/rectangle can physically cut through a later
+        # Frame's color mask if their regions overlap. Defaults to `image` for old call sites.
+        self.source = source if source is not None else image
         self.lowColor = lowColor  # List of low color values or single tuple
         self.highColor = highColor  # List of high color values or single tuple
         self.mask = None
@@ -28,7 +33,7 @@ class Frame:
     def getContour(self, color = 0, isRed = False, contourColor=(0, 0, 255)):
 
         # Extract ROI
-        roi = self.image[self.y1:self.y2, self.x1:self.x2]
+        roi = self.source[self.y1:self.y2, self.x1:self.x2]
         # Blur ROI
         blurred_roi = cv2.GaussianBlur(roi, (7, 7), 0)
         # Replace ROI in original image
@@ -148,8 +153,8 @@ class Frame:
 
         # Left and right ROI slices, with a dead zone (self.leftZoneX..self.rightZoneX) between
         # them that is never scanned
-        left_roi = self.image[scan_y1:scan_y2, self.x1:self.leftZoneX]
-        right_roi = self.image[scan_y1:scan_y2, self.rightZoneX:self.x2]
+        left_roi = self.source[scan_y1:scan_y2, self.x1:self.leftZoneX]
+        right_roi = self.source[scan_y1:scan_y2, self.rightZoneX:self.x2]
 
         # Allow `color` to be a single index or a list/tuple of indices to OR together
         # (e.g. black + magenta both counting as "wall")
@@ -233,7 +238,7 @@ class Frame:
         area is >= min_area. Does not draw anything - callers own their own debug
         visualization so the same detection can be reused for different purposes.
         """
-        roi = self.image[self.y1:self.y2, self.x1:self.x2]
+        roi = self.source[self.y1:self.y2, self.x1:self.x2]
         if roi.size == 0:
             return []
 
@@ -254,6 +259,35 @@ class Frame:
         # Shift into full-image coordinates so results compose with other Frame outputs
         offset = np.array([[[self.x1, self.y1]]])
         return [c + offset for c in contours]
+
+    def getColorContoursSplit(self, color, min_area=200):
+        """
+        Like getColorContours, but scoped to the left/right zones only (self.x1:self.leftZoneX
+        and self.rightZoneX:self.x2), skipping the dead zone between them - the same
+        leftZoneX/rightZoneX split getInnerEdgesSplit uses, so tuning those two values changes
+        both the inner-edge scan and this contour detection together.
+        """
+        color_indices = color if isinstance(color, (list, tuple)) else [color]
+
+        def _contours_in(roi, offset_x):
+            if roi.size == 0:
+                return []
+            blurred = cv2.GaussianBlur(roi, (7, 7), 0)
+            hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+            mask = None
+            for idx in color_indices:
+                m = cv2.inRange(hsv, self.lowColor[idx], self.highColor[idx])
+                mask = m if mask is None else cv2.bitwise_or(mask, m)
+            kernel = np.ones((3, 3), np.uint8)
+            mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+            contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours = [c for c in contours if cv2.contourArea(c) >= min_area]
+            offset = np.array([[[offset_x, self.y1]]])
+            return [c + offset for c in contours]
+
+        left_roi = self.source[self.y1:self.y2, self.x1:self.leftZoneX]
+        right_roi = self.source[self.y1:self.y2, self.rightZoneX:self.x2]
+        return _contours_in(left_roi, self.x1) + _contours_in(right_roi, self.rightZoneX)
 
 
 
@@ -281,9 +315,9 @@ class Frame:
             return None
 
         if side == 'left':
-            roi = self.image[row_y1:row_y2, self.x1:self.leftZoneX]
+            roi = self.source[row_y1:row_y2, self.x1:self.leftZoneX]
         else:
-            roi = self.image[row_y1:row_y2, self.rightZoneX:self.x2]
+            roi = self.source[row_y1:row_y2, self.rightZoneX:self.x2]
         if roi.size == 0:
             return None
 
@@ -325,8 +359,8 @@ class Frame:
         mid_col = self.x1 + total_width // 2
 
         # Left and right boxes
-        left_roi = self.image[scan_y1:scan_y2, self.x1:mid_col]
-        right_roi = self.image[scan_y1:scan_y2, mid_col:self.x2]
+        left_roi = self.source[scan_y1:scan_y2, self.x1:mid_col]
+        right_roi = self.source[scan_y1:scan_y2, mid_col:self.x2]
 
         def create_mask(roi):
 
