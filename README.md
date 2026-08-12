@@ -59,6 +59,33 @@ Drive train: A drive train is all the parts that transfer power from the motor t
 
 ### 1.4 Mounting  of components
 
+
+# 1. Mobility Management
+
++ **Dimensions:** Width 120mm for component fit (Arduino, voltage converter and battery in line horizontally), Length 230mm for tight turns and component fit, height 200mm.
+
++ **Drive Motor:** JGA25-371 DC Motor with _____ encoder. MUST CALCULATE TORQUE (TO-DO)
+  [insert torque calculation image]
+
++ **Steering Motor:** MG90S Micro Servo for precise steering and weight reduction.
+
++ **3D Printed Structure:** Base layer design with a plate that holds the raspberry pi and a mounting plate that holds the step down voltage converter and Arduino Nano.
+  [insert cross-sections and isometric and face images of robot]
+
++ **Custom Mounts:** Mounts and holders for servo, camera, raspberry pi, and a joint mount for step down voltage converter and Arduino Nano. Custom Motor-Differential, Servo-Axle, and Differential-Axle coupling.
+  [pictures and link]
+
++ **Steering:** Initially Parallel Steering, then changed to Ackermann Steering Geometry, prototyped with LEGO technic parts and later made with 3D printed parts.
+  [insert images of prototypes]
+
++ **Wheels:** Spike Prime wheels (56mm diameter, 14mm thick) for compactness and grip.
+  [link to explanation]
+
++ **Differential:** WLTOYS 144001 differential is made of metal ensuring fool proof connections.
+
++ **Iterations:** As you can see in the following image, this was an iterative project with many versions of each part.
+  [insert image of all iterations]
+
 # 2. Power & Sensor Architecture
 
 For the car to know what its doing, we need input and power.
