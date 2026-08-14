@@ -33,7 +33,6 @@ The Width helps to get around tight areas and the height gives a low base with a
 ### Robot images
 _*Add at end*
 
-# 1. Mobility & Mechanical Design
 
 To build a self-driving car we need to build a car.
 
@@ -42,32 +41,278 @@ Objectives:
 As per the rules, the car must have a steering mechanism and the rear axle driven by a motor.
 Our team also wanted the car to be stable and fast (and colorful if we can help it).
 
-### 1.1 Chassis
-Steering: We use the Ackerman steering to turn accurately. The Ackerman steering is a design where the inside front wheel turns sharper than the outside front wheel when a car goes around a corner.
-
-<img src="v-photos/ackerman steering.png" alt="Ackerman Steering">
-
-*This was an early prototype of the Ackerman Steering model before we added it to the first iteration of our Lego car chassis.*
-
-Drive train: A drive train is all the parts that transfer power from the motor to the rear wheels. These are the parts used
-  - Lego rubber wheels: The Lego wheels were the most available and efficient than printing wheels.
-  - WLTOYS 144001 differential: A differential is a drive that is controlled by one motor but can run both wheels independently. The particular differential is made of metal ensuring fool proof connections. 
-
-### 1.2 Drive/Steering choice
-
-### 1.3 Motor selection/ speed reasoning
-
-### 1.4 Mounting  of components
-
 
 # 1. Mobility Management
 
 + **Dimensions:** Width 120mm for component fit (Arduino, voltage converter and battery in line horizontally), Length 230mm for tight turns and component fit, height 200mm.
+## 1.1 Drive System
+**Drive Motor:** JGA25-371 DC Motor with _____ encoder. MUST CALCULATE TORQUE (TO-DO)
+  <table>
+  <tr>
+    <td align="center" width="300" >
+      <img width="768" height="768" alt="image" src="https://github.com/user-attachments/assets/6da4969b-11e3-4240-9260-fae5cd6c5b2f" />
+    </td>
+    <td>
+      <h3>Specifications:</h3>
+      <ul>
+        <li>Voltage: 12V </li>
+        <li>No-load Speed: 126??????RPM </li>
+        <li>Stall Torque: 4.2kg/cm</li>
+        <li>Current: 0.046A</li>
+        <li>Gear Ratio: 21.3:1</li>
+      </ul>
+    </td>
+  </tr>
+  </table>
+  
+  **Selection Reasoning:**
+  + It is compact and lightweight, allowing us to fit it into our robot easily.
+  + Built-in encoder, allowing for precise movement and less wiring hassle.
+  + High torque for pushing the robot with vigor and avoiding stalling.
 
-+ **Drive Motor:** JGA25-371 DC Motor with _____ encoder. MUST CALCULATE TORQUE (TO-DO)
+  The JGA25-371 motor was selected because it combines high torque with integrated encoder feedback, providing both the power and precision required for the WRO   Future Engineers competition. The motor drives the rear wheels through a metal WLTOYS 144001 differential, which allows the robot to maintain smooth and balanced turns while reducing the difference in rotational speed between the left and right wheels. By distributing torque between both LEGO SPIKE Prime wheels, the differential minimizes wheel slip and improves stability during cornering. The integrated Hall encoder provides real-time feedback for closed-loop control, allowing the robot to accurately measure wheel rotation, regulate speed, and maintain consistent movement throughout each run. Unlike smaller motors, the JGA25-371 provides sufficient torque to support the drivetrain while maintaining reliable performance under varying loads. The combination of encoder feedback, the metal differential, and the SPIKE Prime wheels creates a drivetrain that balances power, stability, and precision, making it well-suited for the competition environment.
+
+  **Differential:**
+  We used a metal WLTOYS 144001 differential in our robot, which allows the left and right rear wheels to rotate at different speeds while turning, reducing tire drag and improving turning efficiency. This setup provides smoother and more controlled cornering by distributing torque between both rear wheels and compensating for the difference in the distance each wheel travels during a turn. The differential improves maneuverability and stability, particularly during the obstacle challenge and parallel parking, where precise and repeatable movements are essential.
+  
+  <table>
+  <tr>
+    <td align="center" width="300" >
+      <img width="1000" height="1000" alt="image" src="https://github.com/user-attachments/assets/5421c3d1-071a-458a-9708-831aaf08baae" />
+    </td>
+    <td>
+      <h3>Specifications:</h3>
+      <ul>
+        <li>Differential Type: Planetary bevel-gear differential</li>
+        <li>Material: Metal</li>
+        <li>Application: 1:14 RC vehicles</li>
+        <li>Drive Configuration: Rear-wheel drive</li>
+        <li>Compatibility: 5 mm drive cups (custom coupled to LEGO axle)</li>
+      </ul>
+    </td>
+  </tr>
+  </table>
+
+  **Mounting:**
+  gseiohgsr
+
+  **Considerations:**
+  fwesng
+  
+## 1.2 Steering System
+
+**Steering:** Initially Parallel Steering, then changed to Ackermann Steering Geometry, prototyped with LEGO technic parts and later made with 3D printed parts.
+  [insert images of prototypes]
+
+**Steering Motor:** MG90S Micro Servo for precise steering and weight reduction.
+  <table>
+  <tr>
+    <td align="center" width="300" >
+      <img width="1500" height="1500" alt="image" src="https://github.com/user-attachments/assets/7a6009ed-4475-47c5-9c7a-cf6d4c9111b9" />
+    </td>
+    <td>
+      <h3>Specifications:</h3>
+      <ul>
+        <li>Voltage: 4.8V-6V </li>
+        <li>Operating Speed: 0.1 s/60° at 4.8 V, 0.08 s/60° at 6 V</li>
+        <li>Stall Torque: 1.8 kg·cm at 4.8 V, 2.2 kg·cm at 6 V</li>
+        <li>Current: 0.010A</li>
+        <li>Rotation Range: Approximately 180° (90° in each direction)</li>
+      </ul>
+    </td>
+  </tr>
+  </table>
+
+**Selection Reasoning:**
++ blah
++ blah
++ blah
++ blah
+
+TALK ABOUT ACKERMANN
+Steering: We use the Ackerman steering to turn accurately. The Ackerman steering is a design where the inside front wheel turns sharper than the outside front wheel when a car goes around a corner.
+<img src="v-photos/ackerman steering.png" alt="Ackerman Steering">
+
+*This was an early prototype of the Ackerman Steering model before we added it to the first iteration of our Lego car chassis.*
+
+IMAGE OF ACKEERMANN
+
+**Calibration and Implementation:**
+blahblahblahblahblah
+
+**Mounting:**
+abfaegneog
+image
+
+**Considerations:**
+gwueibgwngwgw
+
+## 1.3 Chassis Design
+
+isometric image of chassis
+
+| Dimension | Value (mm) |
+| ----------- | ----------- |
+| Width | 104 |
+| Length | 177 |
+| Height | 80.5 |
+
+**Design Overview:**
+ergnjeger
+
+**Layout:**
+guewgbrig
+
+Our robot chassis was completely custom-designed in FreeCAD and 3D printed using esun PLA+, which we found is easy to print with, offering a smoother texture and less warping compared to ABS, while also being lightweight and durable. Alongside the main chassis, the drivetrain and steering modules are mounted on our 3D-printed detachable plates that were fine-tuned during testing to achieve the correct alignment with other components. Other components, such as motor clamps and sensor brackets, are designed as independent printable components. The chassis was also designed with modularity in mind for replacements and upgrades, with reduced overhangs for printing ease. (PARAPHRASE)
+
+# 2. Power Systems and Architechture
+
+## 2.1 Power Source
+
+**Battery:** 3 Cell Lithium Battery
+
+<table>
+  <tr>
+    <td align="center" width="300" >
+      <img width="600" height="600" alt="image" src="https://github.com/user-attachments/assets/2157e72e-b7c3-4a06-a0a2-fe5b41f2cea0" />
+    </td>
+    <td>
+      <h3>Specifications:</h3>
+      <ul>
+        <li>Nominal Voltage: 11.1V</li>
+        <li>Fully Charged Voltage: 12.6V</li>
+        <li>Capacity: 3000 mAh</li>
+        <li>Discharge Rate: 30 C</li>
+        <li>Maximum Continuous Current: 90 A</li>
+        <li>Battery Type: Lithium-Polymer</li>
+      </ul>
+    </td>
+  </tr>
+  </table>
+
+  yapyapyapyapyapyapyap
+
+  **Motor Driver:** L298N
+  
+  <table>
+  <tr>
+    <td align="center" width="300" >
+      <img width="750" height="500" alt="image" src="https://github.com/user-attachments/assets/d846cb1f-c902-4d4f-a61a-748b336f3ed7" />
+    </td>
+    <td>
+      <h3>Specifications:</h3>
+      <ul>
+        <li>Driver Type: Dual H-Bridge</li>
+        <li>Motor supply voltage: 5–35 V</li>
+        <li>Maximum current: 2 A per channel</li>
+        <li>PWM speed control</li>
+        <li>Bidirectional motor control</li>
+        <li>Overtemperature protection</li>
+      </ul>
+    </td>
+  </tr>
+  </table>
+
+  ## 2.2 Sensor (Camera)
+  
+  **Wide-Angle Camera:** 
+
+  <table>
+  <tr>
+    <td align="center" width="300" >
+      <img width="600" height="600" alt="image" src="https://github.com/user-attachments/assets/2157e72e-b7c3-4a06-a0a2-fe5b41f2cea0" />
+    </td>
+    <td>
+      <h3>Specifications:</h3>
+      <ul>
+        <li>Nominal Voltage: 11.1V</li>
+        <li>Fully Charged Voltage: 12.6V</li>
+        <li>Capacity: 3000 mAh</li>
+        <li>Discharge Rate: 30 C</li>
+        <li>Maximum Continuous Current: 90 A</li>
+        <li>Battery Type: Lithium-Polymer</li>
+      </ul>
+    </td>
+  </tr>
+  </table>
+
+  **Selection Reasoning:** 
+  gwebuiegeswng
+
+  ## 2.3 Processing Units
+
+  **Single Board Computer: Raspberry Pi 5**
+
+  <table>
+  <tr>
+    <td align="center" width="300" >
+      <img width="1200" height="1200" alt="image" src="https://github.com/user-attachments/assets/b2f8ca6d-7777-4d41-8b53-0eb7e7725d96" />
+    </td>
+    <td>
+      <h3>Specifications:</h3>
+      <ul>
+        <li>Processor: Broadcom BCM2712</li>
+        <li>CPU: Quad-core Arm Cortex-A76 (2.4 GHz)</li>
+        <li>Power: 5 V / 5 A USB-C</li>
+        <li>RAM: 8 GB LPDDR4X</li>
+        <li>USB Ports: 2 × USB 3.0, 2 × USB 2.0</li>
+        <li>Video Output: Dual micro-HDMI (60fps)</li>
+      </ul>
+    </td>
+  </tr>
+  </table>
+
+  TALKTALKTALK ABOUT IT TALK
+
+  **Microcontroller:** Arduino Nano with Shield
+
+  <table>
+  <tr>
+    <td align="center" width="300" >
+      <img width="719" height="653" alt="image" src="https://github.com/user-attachments/assets/530bc462-5956-4c62-9278-40b8df6b9c0f" />
+    </td>
+    <td>
+      <h3>Specifications:</h3>
+      <ul>
+        <li>Nominal Voltage: 11.1V</li>
+        <li>Fully Charged Voltage: 12.6V</li>
+        <li>Capacity: 3000 mAh</li>
+        <li>Discharge Rate: 30 C</li>
+        <li>Maximum Continuous Current: 90 A</li>
+        <li>Battery Type: Lithium-Polymer</li>
+      </ul>
+    </td>
+  </tr>
+  </table>
+
+  talkity talkity talk talk
+
+  ## 2.4 Circuit Diagram
+
+  **Wiring Diagram:**
+
+  IMAGE OF DIAGRAM
+
+  ## 2.5 Power Consumption
+
+  | Component | Supply (V) | Typical Current (A) | Peak Current (A) | Typical Power (W) |
+|------------|------------|---------------------|------------------|-------------------|
+| Raspberry Pi 5 | 5 | 2.50 | 5.00 | 12.50 |
+| Arduino Nano | 5 | 0.05 | 0.10 | 0.25 |
+| 5MP Fish-Eye Lens Camera | 5 | 0.12 | 0.25 | 0.60 |
+| Micro Servo MG90S (steering) | 5 | 0.12 | 0.65 | 0.60 |
+| JGA25-371 DC Motor | 12 | 0.30 | 1.50 | 7.20 |
+| L298N Motor Driver | 12 | 0.01 | 0.04 | 0.24 |
+| Step-Down Converter | — | — | — | η ≈ 88% |
+  
+
+
+
+
+
+
++ **Torque Calculations:**
   [insert torque calculation image]
-
-+ **Steering Motor:** MG90S Micro Servo for precise steering and weight reduction.
 
 + **3D Printed Structure:** Base layer design with a plate that holds the raspberry pi and a mounting plate that holds the step down voltage converter and Arduino Nano.
   [insert cross-sections and isometric and face images of robot]
@@ -75,13 +320,8 @@ Drive train: A drive train is all the parts that transfer power from the motor t
 + **Custom Mounts:** Mounts and holders for servo, camera, raspberry pi, and a joint mount for step down voltage converter and Arduino Nano. Custom Motor-Differential, Servo-Axle, and Differential-Axle coupling.
   [pictures and link]
 
-+ **Steering:** Initially Parallel Steering, then changed to Ackermann Steering Geometry, prototyped with LEGO technic parts and later made with 3D printed parts.
-  [insert images of prototypes]
-
 + **Wheels:** Spike Prime wheels (56mm diameter, 14mm thick) for compactness and grip.
   [link to explanation]
-
-+ **Differential:** WLTOYS 144001 differential is made of metal ensuring fool proof connections.
 
 + **Iterations:** As you can see in the following image, this was an iterative project with many versions of each part.
   [insert image of all iterations]
