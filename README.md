@@ -15,12 +15,135 @@ This repository contains engineering materials of a self-driven vehicle's model 
 
 ## Introduction
 
-_This part must be filled by participants with the technical clarifications about the code: which modules the code consists of, how they are related to the electromechanical components of the vehicle, and what is the process to build/compile/upload the code to the vehicle’s controllers._
+We are the Blue Lobsters, Niva, Jeevesh and Shadya. We are united by a passion for STEM, Electronics, coding and jalapeño poppers. We wanted to bring our jouney to many others with the same passions and inspire teenagers around the world. To us its more than just coding or building, its the experiences and connections along the way.
 
-## How to prepare the repo based on the template
+## Robot 
 
-_Remove this section before the first commit to the repository_
+Our robot is called Jadoo which means magic in Hindi. The name comes from a popular movie character who is also an alien and can do Jadoo. The drive base of our robot kind of looked like an alien head, so we named it after our favorite alien character.
 
-1. Clone this repo by using the `git clone` functionality.
-2. Remove `.git` directory
-3. [Initialize a new public repository on GitHub](https://github.com/new) by following instructions from "create a new repository on the command line" section (appeared after pressing "Create repository" button).
+**Dimensions**
+
+  Width: 12 cm                     
+  Length: 23 cm                    
+  Height: 17 cm (Without wire)      
+          20 cm (With Camera wire)  
+          
+The Width helps to get around tight areas and the height gives a low base with a more balanced center of gravity all while being easy to maneuver due to the length. 
+
+### Robot images
+_*Add at end*
+
+# 1. Mobility & Mechanical Design
+
+To build a self-driving car we need to build a car.
+
+Objectives:
+
+As per the rules, the car must have a steering mechanism and the rear axle driven by a motor.
+Our team also wanted the car to be stable and fast (and colorful if we can help it).
+
+### 1.1 Chassis
+Steering: We use the Ackerman steering to turn accurately. The Ackerman steering is a design where the inside front wheel turns sharper than the outside front wheel when a car goes around a corner.
+
+<img src="v-photos/ackerman steering.png" alt="Ackerman Steering">
+
+*This was an early prototype of the Ackerman Steering model before we added it to the first iteration of our Lego car chassis.*
+
+Drive train: A drive train is all the parts that transfer power from the motor to the rear wheels. These are the parts used
+  - Lego rubber wheels: The Lego wheels were the most available and efficient than printing wheels.
+  - WLTOYS 144001 differential: A differential is a drive that is controlled by one motor but can run both wheels independently. The particular differential is made of metal ensuring fool proof connections. 
+
+### 1.2 Drive/Steering choice
+
+### 1.3 Motor selection/ speed reasoning
+
+### 1.4 Mounting  of components
+
+
+# 1. Mobility Management
+
++ **Dimensions:** Width 120mm for component fit (Arduino, voltage converter and battery in line horizontally), Length 230mm for tight turns and component fit, height 200mm.
+
++ **Drive Motor:** JGA25-371 DC Motor with _____ encoder. MUST CALCULATE TORQUE (TO-DO)
+  [insert torque calculation image]
+
++ **Steering Motor:** MG90S Micro Servo for precise steering and weight reduction.
+
++ **3D Printed Structure:** Base layer design with a plate that holds the raspberry pi and a mounting plate that holds the step down voltage converter and Arduino Nano.
+  [insert cross-sections and isometric and face images of robot]
+
++ **Custom Mounts:** Mounts and holders for servo, camera, raspberry pi, and a joint mount for step down voltage converter and Arduino Nano. Custom Motor-Differential, Servo-Axle, and Differential-Axle coupling.
+  [pictures and link]
+
++ **Steering:** Initially Parallel Steering, then changed to Ackermann Steering Geometry, prototyped with LEGO technic parts and later made with 3D printed parts.
+  [insert images of prototypes]
+
++ **Wheels:** Spike Prime wheels (56mm diameter, 14mm thick) for compactness and grip.
+  [link to explanation]
+
++ **Differential:** WLTOYS 144001 differential is made of metal ensuring fool proof connections.
+
++ **Iterations:** As you can see in the following image, this was an iterative project with many versions of each part.
+  [insert image of all iterations]
+
+# 2. Power & Sensor Architecture
+
+For the car to know what its doing, we need input and power.
+
+Objective: 
+  - Incorporate camera sensor
+  - Create power system architecture for robot
+
+### 2.1 Power System Architecture
+
+<img src="v-photos/Screenshot 2026-08-10 193454.png" alt="Ackerman Steering">
+
+### 2.2 Current Draw Reasoning 
+
+### 2.3 Sensor Selection and Justification
+
+### 2.4 Sensor Placement and Calibration
+
+### 2.5 Wiring Diagram
+
+# 3. Software Architecture
+
+### 3.1 Code Implementation 
+
+### 3.2 Modularity 
+
+### 3.3 Code Comments 
+
+### 3.4 State Machine 
+
+### 3.5 PID control
+
+### 3.6 Algorithm
+
+### 3.7 Lane Following
+
+### 3.8 Obstacle
+
+### 3.9 Parking
+
+### 3.10 Microcontroller code
+
+### 3.11 Testing / Tuning Process
+
+### 3.12 Performance Measurement 
+
+### 3.13 Flow charts
+
+# 4. Subsystem Thinking and Engineering Decisions
+
+### 4.1 Subsystem integration with constraints and tradeoffs
+
+### 4.2 Iteration Cycles With Reasoning
+
+### 4.3 Engineering Reasoning With Risk Analysis
+
+
+
+
+
+
