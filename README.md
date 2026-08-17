@@ -167,6 +167,13 @@ Our robot chassis was completely custom-designed in FreeCAD and 3D printed using
 
 # 2. Power Systems and Architechture
 
+For the car to know what its doing, we need input and power.
+
+Objective: 
+  - Incorporate camera sensor
+  - Create power system architecture for robot
+
+
 ## 2.1 Power Source
 
 **Battery:** 3 Cell Lithium Battery
@@ -307,10 +314,6 @@ Our robot chassis was completely custom-designed in FreeCAD and 3D printed using
   
 
 
-
-
-
-
 + **Torque Calculations:**
   [insert torque calculation image]
 
@@ -326,25 +329,10 @@ Our robot chassis was completely custom-designed in FreeCAD and 3D printed using
 + **Iterations:** As you can see in the following image, this was an iterative project with many versions of each part.
   [insert image of all iterations]
 
-# 2. Power & Sensor Architecture
 
-For the car to know what its doing, we need input and power.
-
-Objective: 
-  - Incorporate camera sensor
-  - Create power system architecture for robot
-
-### 2.1 Power System Architecture
+###  Power System Architecture
 
 <img src="v-photos/Screenshot 2026-08-10 193454.png" alt="Ackerman Steering">
-
-### 2.2 Current Draw Reasoning 
-
-### 2.3 Sensor Selection and Justification
-
-### 2.4 Sensor Placement and Calibration
-
-### 2.5 Wiring Diagram
 
 # 3. Software Architecture
 
