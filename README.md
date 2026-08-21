@@ -220,32 +220,73 @@ Objective:
   </tr>
   </table>
 
-  ## 2.2 Sensor (Camera)
+  ## 2.2 Sensor and Camera
   
-  **Wide-Angle Camera:** 
+  **SainSmart Wide-Angle Camera:** 
 
   <table>
   <tr>
     <td align="center" width="300" >
-      <img width="600" height="600" alt="image" src="https://github.com/user-attachments/assets/2157e72e-b7c3-4a06-a0a2-fe5b41f2cea0" />
+      <img width="1000" height="1000" alt="image" src="https://github.com/user-attachments/assets/5a9d887b-8b2f-4ce6-a781-90fff08bd01f" />
     </td>
     <td>
       <h3>Specifications:</h3>
       <ul>
-        <li>Nominal Voltage: 11.1V</li>
-        <li>Fully Charged Voltage: 12.6V</li>
-        <li>Capacity: 3000 mAh</li>
-        <li>Discharge Rate: 30 C</li>
-        <li>Maximum Continuous Current: 90 A</li>
-        <li>Battery Type: Lithium-Polymer</li>
+        <li>Resolution: 5MP (2592 × 1944)</li>
+        <li>Image Sensor: OV5647</li>
+        <li>Field of View: 160°</li>
+        <li>Interface: CSI</li>
+        <li>Video: 1080p @ 30 FPS, 720p @ 60 FPS, 640 × 480 @ 60/90 FPS</li>
+        <li>Dimensions: 25 × 24 × 9 mm</li>
       </ul>
     </td>
   </tr>
   </table>
 
   **Selection Reasoning:** 
-  gwebuiegeswng
 
+  * 160° wide field of view from the wide-angle lens captures a larger area, improving the robot’s ability to detect and track its surroundings.
+  * 5MP resolution provides clear and detailed images for vision-based tasks.
+  * 1080p video at 30 FPS provides smooth real-time footage for image processing and object detection.
+  * Compact and lightweight design allows the camera to be easily mounted on the robot without adding significant weight.
+
+  This setup provides a 160° wide-angle view, improving the robot’s environmental awareness during both the Open Challenge and Obstacle Challenge. The camera captures course elements such as walls, pillars, colored markers, parking spaces, and lane lines, providing visual information for navigation and decision-making.
+
+  **The camera is mainly used for the following tasks:**
+
+  * Detect and determine wall positions.
+  * Identify pillar colors and types.
+  * Recognize parking zones.
+  * Track path lines and boundaries.
+
+
+   **BNO055 Inertial Measurement Unit (IMU):** 
+
+  <table>
+  <tr>
+    <td align="center" width="300" >
+      <img width="640" height="640" alt="image" src="https://github.com/user-attachments/assets/e744f7c4-f232-47a1-849b-ada9e6dda31e" />
+    </td>
+    <td>
+      <h3>Specifications:</h3>
+      <ul>
+        <li>Sensor Type: 9-axis IMU (3-axis accelerometer, 3-axis gyroscope, 3-axis magnetometer)</li>
+        <li>Processor: ARM Cortex-M0+ with integrated Bosch sensor-fusion firmware</li>
+        <li>Interfaces: I²C, UART</li>
+        <li>Operating Voltage: 3.3V</li>
+        <li>Key Features: Absolute orientation, linear acceleration, gravity vector, magnetic heading, temperature sensing, and motion detection</li>
+      </ul>
+    </td>
+  </tr>
+  </table>
+
+  **Selection Reasoning:** 
+
+    The BNO055 is a compact 9-axis IMU that combines a 3-axis accelerometer, 3-axis gyroscope, and 3-axis magnetometer with an onboard processor for sensor fusion. It provides orientation data such as heading, Euler angles, linear acceleration, and gravity direction, reducing the need for complex external calculations.
+    
+    We mounted the BNO055 near the center of the chassis to provide stable and consistent measurements. It communicates with the Arduino Nano through the I²C interface, continuously providing real-time orientation and angular velocity data. This helps the robot maintain an accurate heading and make smoother steering adjustments, which are especially important during obstacle navigation.
+  
+  
   ## 2.3 Processing Units
 
   **Single Board Computer: Raspberry Pi 5**
