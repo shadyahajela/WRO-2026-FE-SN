@@ -269,30 +269,57 @@ Objective:
   </tr>
   </table>
 
-  TALKTALKTALK ABOUT IT TALK
+  * The Raspberry Pi 5 acts as the robot’s primary processing unit, handling high-level decision-making, image processing, and the integration of sensor data.
+  * Equipped with a quad-core Arm Cortex-A76 CPU and 8GB of RAM, it is capable of processing real-time camera data for applications such as mapping, obstacle detection, and path planning.
+  * Its compact design also allows it to be easily mounted onto the chassis without adding significant weight.
 
-  **Microcontroller:** Arduino Nano with Shield
+  **Microcontroller:** Arduino Nano
 
   <table>
   <tr>
     <td align="center" width="300" >
-      <img width="719" height="653" alt="image" src="https://github.com/user-attachments/assets/530bc462-5956-4c62-9278-40b8df6b9c0f" />
+      <img width="388" height="320" alt="image" src="https://github.com/user-attachments/assets/e3d85b52-7df4-4e75-ab28-ce22eec3256f" />
     </td>
     <td>
       <h3>Specifications:</h3>
       <ul>
-        <li>Nominal Voltage: 11.1V</li>
-        <li>Fully Charged Voltage: 12.6V</li>
-        <li>Capacity: 3000 mAh</li>
-        <li>Discharge Rate: 30 C</li>
-        <li>Maximum Continuous Current: 90 A</li>
-        <li>Battery Type: Lithium-Polymer</li>
+        <li>ATmega328P 8-bit microcontroller</li>
+        <li>32 KB flash memory</li>
+        <li>2 KB SRAM</li>
+        <li>16 MHz clock speed</li>
+        <li>22 multi-function I/O pins</li>
+        <li>UART, I²C, and SPI communication</li>
       </ul>
     </td>
   </tr>
   </table>
 
-  talkity talkity talk talk
+  * The Arduino Nano acts as the robot’s low-level controller, managing tasks such as motor control, steering, and sensor input.
+  * It communicates with the Raspberry Pi 5 through a serial connection, separating high-level processing from precise hardware control.
+  * Its fast and reliable response allows for accurate control of the robot’s motors and steering system, resulting in smoother and more consistent movement.
+
+  **Expansion Board:** Arduino Nano Shield
+
+  <table>
+  <tr>
+    <td align="center" width="300" >
+      <img width="894" height="861" alt="image" src="https://github.com/user-attachments/assets/a4056b59-17b4-4e73-a7d9-48c3cd8f3f62" />
+    </td>
+    <td>
+      <h3>Specifications:</h3>
+      <ul>
+        <li>Interface: Arduino Nano-compatible pin headers</li>
+        <li>Supported Devices: Arduino Nano and compatible modules/sensors</li>
+        <li>I/O Access: Digital, analog, PWM, UART, I²C, and SPI pins</li>
+        <li>Power Supply: 5V and 3.3V power outputs</li>
+      </ul>
+    </td>
+  </tr>
+  </table>
+
+  * The Arduino Nano Shield expands the robot’s capabilities by providing a convenient platform for connecting and controlling external components such as motors, sensors, and other peripherals.
+  * It simplifies wiring by providing accessible connection points for the Arduino Nano’s input and output pins, while also supporting power distribution to connected components.
+  * This makes the system easier to assemble, maintain, and modify, while providing reliable connections between the Arduino Nano and the robot’s hardware.
 
   ## 2.4 Circuit Diagram
 
