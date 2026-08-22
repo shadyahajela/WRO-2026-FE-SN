@@ -372,12 +372,14 @@ Objective:
 
   | Component | Supply (V) | Typical Current (A) | Peak Current (A) | Typical Power (W) |
 |------------|------------|---------------------|------------------|-------------------|
-| Raspberry Pi 5 | 5 | 2.50 | 5.00 | 12.50 |
-| Arduino Nano | 5 | 0.05 | 0.10 | 0.25 |
-| 5MP Fish-Eye Lens Camera | 5 | 0.12 | 0.25 | 0.60 |
-| Micro Servo MG90S (steering) | 5 | 0.12 | 0.65 | 0.60 |
-| JGA25-371 DC Motor | 12 | 0.30 | 1.50 | 7.20 |
-| L298N Motor Driver | 12 | 0.01 | 0.04 | 0.24 |
+| Raspberry Pi 5 | 5 | 0.80 | 5.00 | 4.00 |
+| Arduino Nano | 5 | 0.019 | 0.030 | 0.095 |
+| 5MP SainSmart Wide-Angle Lens Camera | 5 | 0.15 | 0.25 | 0.75 |
+| BNO055 IMU | 3.3 | 0.012 | 0.015 | 0.04 |
+| Micro Servo MG90S (steering) | 5 | 0.20 | 0.80 | 1.00 |
+| JGA25-371 DC Motor | 12 | 0.50 | 2.00 | 6.00 |
+| L298N Motor Driver | 12 | 0.02 | 0.04 | 0.24 |
+| Arduino Nano Shield | 5 | 0.019 | 0.030 | 0.095 |
 | Step-Down Converter | — | — | — | η ≈ 88% |
   
 
