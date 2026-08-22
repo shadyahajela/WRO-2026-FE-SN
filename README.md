@@ -44,7 +44,6 @@ Our team also wanted the car to be stable and fast (and colorful if we can help 
 
 # 1. Mobility Management
 
-+ **Dimensions:** Width 120mm for component fit (Arduino, voltage converter and battery in line horizontally), Length 230mm for tight turns and component fit, height 200mm.
 ## 1.1 Drive System
 **Drive Motor:** JGA25-371 DC Motor with _____ encoder. MUST CALCULATE TORQUE (TO-DO)
   <table>
@@ -151,21 +150,67 @@ gwueibgwngwgw
 
 isometric image of chassis
 
-| Dimension | Value (mm) |
-| ----------- | ----------- |
-| Width | 104 |
-| Length | 177 |
-| Height | 80.5 |
+| Dimension | Value (mm) | Reason |
+| ----------- | ----------- | -------------------------------------------- |
+| Width | 120 | Component fit (Arduino, voltage converter and battery in line horizontally) |
+| Length | 230 | Tight turns and component fit |
+| Height | 200 | (Including camera wire) |
 
 **Design Overview:**
-ergnjeger
+wnog
+
+**Iteration 1: LEGO**
+
+IMAGE
+
+Aspects acheived:
+* A functioning robot capable of performing the game to a certain degree of efficiency.
+
+Drawbacks:
+* Tall and bulky design paired with a narrow body produced a high center of gravity and minimal support, making the robot unstable on quick turns and slower on straights.
+* LEGO Technic design limited freedom of customizability, forcing any 3D printed parts to align to a LEGO frame.
+* Limited range of movement for LEGO Ackermann steering system, constraining turns to 40 degrees to either side.
+* Terrible tolerances (byproduct of using LEGO) result in constant plastic grinding in rear drive system.
+* Inefficient component layout leaving much wasted space and area for drag
+
+**Iteration 2: 3D Printed Parts and LEGO fusion:**
+
+IMAGE
+
+Aspects achieved/retained:
+* Customizability of component mounting, such as custom in-built mounts for the IMU, DC Motor, etc.
+* Expanded range of movement for newly 3D printed Ackermann steering system, allowing turns up to 55 degrees to either side.
+* Improved tolerances and a switch from LEGO to metal differential remove the grinding in the read drive system.
+* Optimized component layout for maximum space usage and minimal drag-creating parts.
+* 
+
+Drawbacks:
+* LEGO camera mount restrains pinpoint mount changes to find optimal camera angle.
+* LEGO servo mount is unnecessarily complex and is not fixed precisely, allowing for small movements when the servo moves.
+* Slightly imprecise tolerances for rear differential drive system, resulting in jerky movement and inconsistent torque and speed.
+
+**Iteration 3: Fully 3D Printed Chassis:**
+
+IMAGE
+
+Aspects achieved/retained:
+* 3D printed camera mount allows for custom mounting; iteration testing resulted in us finding the optimal camera angle and height.
+* 3D printed servo mount is a simple, single piece mount that effectively zeros servo shaking.
+* Perfected tolerances in the rear differential drive system allow the motor to turn the rear axle efficiently with little energy lost and constant torque and speed.
+* Customizability of component mounting, such as custom in-built mounts for the IMU, DC Motor, etc.
+* Expanded range of movement for Ackermann steering system, allowing turns up to 55 degrees to either side.
+* Optimized component layout for maximum space usage and minimal drag-creating parts.
+
+Accepted Trade-Offs:
+* Overall shape of the robot is not streamlined and produces drag, but minimal enough that it barely affects performance.
+* 
 
 **Layout:**
 guewgbrig
 
 Our robot chassis was completely custom-designed in FreeCAD and 3D printed using esun PLA+, which we found is easy to print with, offering a smoother texture and less warping compared to ABS, while also being lightweight and durable. Alongside the main chassis, the drivetrain and steering modules are mounted on our 3D-printed detachable plates that were fine-tuned during testing to achieve the correct alignment with other components. Other components, such as motor clamps and sensor brackets, are designed as independent printable components. The chassis was also designed with modularity in mind for replacements and upgrades, with reduced overhangs for printing ease. (PARAPHRASE)
 
-# 2. Power Systems and Architechture
+# 2. Power Systems and Architecture
 
 For the car to know what its doing, we need input and power.
 
