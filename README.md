@@ -101,7 +101,7 @@ Our team also wanted the car to be stable and fast (and colorful if we can help 
 ## 1.2 Steering System
 
 **Steering:** Initially Parallel Steering, then changed to Ackermann Steering Geometry, prototyped with LEGO technic parts and later made with 3D printed parts.
-  [insert images of prototypes]
+  insert images of prototypes
 
 **Steering Motor:** MG90S Micro Servo for precise steering and weight reduction.
   <table>
@@ -123,28 +123,43 @@ Our team also wanted the car to be stable and fast (and colorful if we can help 
   </table>
 
 **Selection Reasoning:**
-+ blah
-+ blah
-+ blah
-+ blah
+* The compact size and PWM interface make the MG90S easy to integrate and control using the Arduino Nano.
+* It provides sufficient torque to steer the front wheels accurately and responsively.
+* Its fast response and metal gear construction provide reliable and stable steering during turns and lane changes.
+* The MG90S is widely used in hobby robotics, making replacement parts, mounting hardware, and documentation readily available.
 
-TALK ABOUT ACKERMANN
-Steering: We use the Ackerman steering to turn accurately. The Ackerman steering is a design where the inside front wheel turns sharper than the outside front wheel when a car goes around a corner.
+We considered several steering systems, but following our design principle of precision, we decided to implement Ackermann steering geometry to better replicate the controlled turning behavior of real-world vehicles.
+
+Unlike simpler steering systems, Ackermann geometry allows each front wheel to turn at a different angle during a corner. This reduces tire slippage and improves steering accuracy, resulting in smoother and more controlled turns.
+
+The fundamental principle of Ackermann geometry involves positioning the steering linkage so that the lines extending from the front wheels intersect at a common point along the rear axle of the robot.
+
 <img src="v-photos/ackerman steering.png" alt="Ackerman Steering">
 
 *This was an early prototype of the Ackerman Steering model before we added it to the first iteration of our Lego car chassis.*
 
+Although this steering geometry is more complex to implement, we believe its advantages are especially important for obstacle navigation and parking, where precise control and a small turning radius are essential. It allows the robot to maneuver smoothly and maintain accurate alignment in tighter spaces.
+
+Our implementation uses a custom 3D-printed Ackermann steering mechanism, with the following key design considerations:
+* We used Onshape to experiment with different pivot points, linkage positions, and steering angles throughout the design process.
+* Since achieving perfect Ackermann geometry at the robot's small scale is difficult, we aimed to closely approximate the ideal geometry through multiple design iterations.
+* The MG90S servo horn and steering angles were adjusted directly in Onshape before 3D printing and physical testing.
+
 IMAGE OF ACKEERMANN
 
 **Calibration and Implementation:**
-blahblahblahblahblah
+To achieve accurate and consistent steering, we used a combination of CAD adjustments and physical testing:
+* Different servo positions, linkage lengths, and steering angles were tested in Onshape to determine the most suitable configuration.
+* The physical steering assembly was then tested by turning the wheels fully in both directions and checking for smooth, consistent movement.
+* Based on the test results, we modified the CAD model and repeated the process until the steering geometry provided the desired range of motion and wheel alignment.
+* The final Onshape design was then used to produce the 3D-printed steering assembly.
 
 **Mounting:**
 abfaegneog
 image
 
 **Considerations:**
-gwueibgwngwgw
+While the MG90S is suitable for our current steering system, we considered upgrading to the MG996R because it offers significantly higher torque and a more durable metal gear system. The increased torque would allow the servo to handle greater resistance from the steering mechanism and front wheels, providing more consistent steering and reducing the possibility of the servo struggling or losing its position during sharper turns. Its stronger construction would also make it more reliable under repeated use and during rapid steering adjustments or uneven surfaces. Although the MG996R is larger and requires more power than the MG90S, these disadvantages could be managed by modifying the chassis and power system. Overall, the MG996R would provide a stronger and more robust steering system, making it a potential upgrade if additional steering torque and durability are needed.
 
 ## 1.3 Chassis Design
 
