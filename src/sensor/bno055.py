@@ -4,10 +4,14 @@ import time
 import numpy as np
 import json
 import traceback
-from src.obstacle_challenge import config
+# from src.obstacle_challenge import config
 
 # Define the file where calibration data will be stored
-CALIBRATION_FILE = "src/sensors/bno055_calibration.json"
+CALIBRATION_FILE = "bno055_calibration.json"
+
+GYRO_ENABLED = True
+GYRO_KP = 3.0
+HEADING_LOCK_TOLERANCE = 5.0
 
 sensor = None
 
@@ -98,7 +102,7 @@ def perform_interactive_calibration():
 
             # --- MODIFIED: Stricter condition ---
             # Wait for all three components to be fully calibrated.
-            if gyro >= 3 and accel >= 3 and mag >= 3:
+            if gyro >= 3 and accel >= 1 and mag >= 3:
                 # The System status (sys) will automatically become 3 once the
                 # components are calibrated, so we don't need to check it explicitly.
                 print("\n\nINFO: All components are fully calibrated!")
@@ -117,7 +121,7 @@ def initialize():
     Initializes the BNO055 sensor and attempts to load pre-saved calibration data.
     """
     global sensor
-    if not config.GYRO_ENABLED:
+    if not GYRO_ENABLED:
         print("INFO: Gyro is disabled in config.")
         return True
 
@@ -149,6 +153,16 @@ def get_heading():
         except Exception:
             return None
     return None
+
+
+def get_relative_heading(initial_heading):
+    """Returns the current heading relative to initial_heading, wrapped to 0..360
+    degrees - an absolute-style 0-360 reading that starts at 0 at initial_heading."""
+    heading = get_heading()
+    if heading is None:
+        return None
+    relative = (heading - initial_heading) % 360
+    return relative
 
 
 def get_initial_heading(num_readings=20):
@@ -190,6 +204,8 @@ if __name__ == "__main__":
         # Save the results
         save_calibration()
 
+        initial = get_initial_heading()
+
         print("\n--- Testing with new calibration ---")
         try:
             print("Reading gyro heading. Press Ctrl+C to exit.")
@@ -197,7 +213,7 @@ if __name__ == "__main__":
                 cal_status = sensor.calibration_status
                 heading = get_heading()
                 if heading is not None:
-                    print(f"\rHeading: {heading:7.2f}° | Cal Status (S,G,A,M): {cal_status}", end="")
+                    print(f"\rinitial:{initial} Heading: {heading:7.2f}° | Cal Status (S,G,A,M): {cal_status}", end="")
                 else:
                     print("\rCould not read heading.", end="")
                 time.sleep(0.1)

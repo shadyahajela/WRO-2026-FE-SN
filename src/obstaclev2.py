@@ -1,4 +1,6 @@
 #IMPORTS
+import sensor.bno055 as bno
+
 import time 
 import math
 import serial
@@ -11,8 +13,7 @@ from frames import Frame #define your color ranges and other frame-related funct
 from picamera2 import Picamera2
 import cv2
 
-#COLOR VALUES
-# H - /2, S - x 2.55, V - x 2.55
+#COLOR VALUES# H - /2, S - x 2.55, V - x 2.55
 
 #RED COLOR VALUES (from obstacle_FAKE.py)
 # Red wraps around hue 0/180, so two ranges are combined
@@ -60,7 +61,7 @@ previous_error_green = 0
 #WALL FOLLOWING VALUES (used only when no red/green obstacle is visible)
 wfx1, wfy1, wfx2, wfy2 = 0, 220, 640, 260   # small band - mirrors obstacle_challenge.py's no-obstacle default
 wf_gap_half_width = 100   # tune this - each gap edge sits this many pixels out from wall_frame's own center (recomputed in wall_follow() off wfx1)
-between_left_wall_offset = 100   # tune - artificial left wall = wall_frame.x1 + this, forced during BETWEEN (lines>=12)
+between_left_wall_offset = 150   # tune - artificial left wall = wall_frame.x1 + this, forced during BETWEEN
 kp_wall = 0.3
 kd_wall = 0.22
 dead_zone_px = 20
@@ -80,9 +81,9 @@ PARK_BOX_MAGENTA_PX = 1000   # tune on field
 
 #LAP COUNTING / DIRECTION VALUES (from obstacle_challenge.py)
 CW = 0
-CCW = 0
+CCW = 1
 orangeLine = 0
-blueLine = 0
+blueLine = 11
 line_detected = False
 start_time_line = time.time()
 
@@ -93,25 +94,31 @@ turn_execution_time = 0.4  # seconds to hold the turn before handing back to nor
 turn_delay_time = None
 turning_start_time = 0
 
+turn_count = 0
+start_time_turn_count = time.time()   # debounce for turn_count, same 1.5s pattern as orangeLine/blueLine's start_time_line
+
 #LEAVE PARKING VALUES (from obstacle_challenge.py - only its "phase 1" drive-straight-out is implemented there)
 leave_start_time = None
-leave_forward_time = 0.7   # seconds to drive forward out of parking before handing off to normal driving
+leave_forward_time = 0.65   # seconds to drive forward out of parking before handing off to normal driving
+#0.7
+
 
 #WAIT/FORCE VALUES (from obstacle_challenge.py - "wrong side" block seen early, near a turn)
 EARLY_LINE_Y1 = 250
 EARLY_LINE_Y2 = 380   # sits above bottom_frame's own y-range, so the lap line is seen earlier/farther away
 EARLY_LINE_MIN_PX = 200   # tune on field
 CENTER_BLACK_FULL_PX = 95   # 10x10 center frame pixel count considered "mostly filled" with black (tune on field)
-block_force_turn_time = 1.5   # seconds to force-turn once the center frame fills
+block_force_turn_time = 0.3   # seconds to force-turn once the center frame fills
 block_force_turn_start = None
-WAIT_DELAY = 0.5   # seconds to hold steering after entering WAIT before its own logic starts running
+WAIT_DELAY = 0.35   # seconds to hold steering after entering WAIT before its own logic starts running
 wait_start_time = None
+left = 0   # 1 only for the one-time WAIT/FORCE triggered right as LEAVE finishes - reverses FORCE's steering direction once, then resets to 0
 
 #STATES
 STRAIGHT = 0   # no red/green obstacle visible - wall following
 OBSTACLE = 1   # sees a red or green obstacle - avoidance steering
 TURNING = 2    # executing a turn at a lap line
-BETWEEN = 3    # after 12 lines - CCW does what STRAIGHT does (blocks treated as red, else wall-follow), CW goes straight to PARK
+BETWEEN = 3    # entered only by finishing a WAIT/FORCE sequence while lines is 11 or 12 - CCW does what STRAIGHT does (blocks treated as red, else wall-follow), CW goes straight to PARK
 PARK = 4       # CW after 12 lines - stop
 LEAVE = 5      # starting state - drive straight out of parking before normal driving begins
 WAIT = 6       # saw the "wrong side" block early - drive nearly straight until the center frame fills with black
@@ -128,6 +135,10 @@ last_message = ""
 #getting serial connection working
 ser = serial.Serial('/dev/ttyUSB0', 19200, timeout=1)
 time.sleep(2)
+
+#IMU
+bno.initialize() 
+initial = bno.get_initial_heading()
 
 picam2 = Picamera2()
 
@@ -154,7 +165,7 @@ def wall_follow(image, image_source):
     wall_frame = Frame(wfx1, wfy1, wfx2, wfy2, image, wall_low, wall_high, frameColor=(255,0,0), leftZoneX=gap_left_x, rightZoneX=gap_right_x, source=image_source)
     left_x, right_x, wall_mask, scan_y1, scan_y2 = wall_frame.getInnerEdgesSplit(color=wall_idx, col_threshold=20, contourColor=(255,255,255))
 
-    if lines >= 12:
+    if state == BETWEEN:
         #BETWEEN: pretend there's a wall at a fixed offset from wall_frame's own x1, regardless of what's actually detected
         left_x = wall_frame.x1 + between_left_wall_offset
 
@@ -207,6 +218,9 @@ def wall_follow(image, image_source):
 #main loop to show camera feed
 while True:
 
+    #imu heading
+    heading = bno.get_relative_heading(initial)
+
     #camera feed
     image = picam2.capture_array()
     image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
@@ -258,7 +272,7 @@ while True:
     green_contours = green_frame.getColorContours(0, min_area=1000)
 
     #BETWEEN: every block from here on is driven around exactly like a red block
-    if lines >= 12:
+    if state == BETWEEN:
         red_contours = red_contours + green_contours
         green_contours = []
 
@@ -354,10 +368,10 @@ while True:
     black_contours = black_frame.getColorContours(0, min_area=200)
     cv2.drawContours(image, black_contours, -1, (255,0,0), 2)
 
-    #magenta counts as wall too, except once past 12 lines (it's the parking marker by then, not terrain)
-    wall_low  = [lowBlack] if lines >= 12 else [lowBlack, lowMagenta]
-    wall_high = [highBlack] if lines >= 12 else [highBlack, highMagenta]
-    wall_idx  = 0 if lines >= 12 else [0, 1]
+    #magenta counts as wall too, except once in BETWEEN (it's the parking marker by then, not terrain)
+    wall_low  = [lowBlack] if state == BETWEEN else [lowBlack, lowMagenta]
+    wall_high = [highBlack] if state == BETWEEN else [highBlack, highMagenta]
+    wall_idx  = 0 if state == BETWEEN else [0, 1]
 
     #four small corner frames, stepping diagonally in from each top corner of black_frame -
     #detect and draw black(+magenta) contours, and keep their pixel counts to check if a side is "full"
@@ -400,7 +414,7 @@ while True:
         steering_value = center
 
     elif state == LEAVE:
-        speed_value = 0
+        speed_value = 140
 
         #leaving parking frames (is it CW or CCW?)
         leave_CW_frame = Frame(40, 300, 120, 380, image, [lowBlack, lowMagenta], [highBlack, highMagenta], frameColor=(0,255,0), source=image_source)
@@ -428,8 +442,17 @@ while True:
             steering_value = center + margin if CW else center - margin
             on = 1
         else:
-            #done leaving, hand off to normal driving
-            state = STRAIGHT   # placeholder - redispatched to STRAIGHT/OBSTACLE/BETWEEN next frame
+            #done leaving - check for a block needing WAIT/FORCE treatment before handing off to normal driving
+            if CW and (redPx > OBSTACLE_TURN):
+                state = WAIT
+                wait_start_time = time.time()
+                left = 1
+            elif CCW and (greenPx > OBSTACLE_TURN):
+                state = WAIT
+                wait_start_time = time.time()
+                left = 1
+            else:
+                state = OBSTACLE   # placeholder - redispatched to STRAIGHT/OBSTACLE/BETWEEN next frame
             leave_start_time = None
 
     elif state == TURNING:
@@ -459,7 +482,7 @@ while True:
             if CCW:
                 steering_value = center + 5
 
-            center_frame = Frame(315, 220, 325, 230, image, [lowBlack], [highBlack], frameColor=(0,255,255), source=image_source)
+            center_frame = Frame(315, 190, 325, 200, image, [lowBlack], [highBlack], frameColor=(0,255,255), source=image_source)
             centerBlackPx = center_frame.getContour(0, contourColor=(0,255,0))
 
             if centerBlackPx >= CENTER_BLACK_FULL_PX:
@@ -468,27 +491,70 @@ while True:
                 wait_start_time = None
 
     elif state == FORCE:
-        #force a hard turn for a fixed duration, then hand back to normal driving
-        if CW:
-            steering_value = center + margin
-        elif CCW:
-            steering_value = center - margin
+        #force a hard turn for a fixed duration, then hand back to normal driving -
+        #reversed direction only for the one-time WAIT/FORCE triggered right after LEAVE
+        if left == 1:
+            if CW:
+                steering_value = center - margin
+            elif CCW:
+                steering_value = center + margin
+        else:
+            if CW:
+                steering_value = center + margin
+            elif CCW:
+                steering_value = center - margin
 
         if time.time() - block_force_turn_start > block_force_turn_time:
-            state = OBSTACLE   # placeholder - redispatched to STRAIGHT/OBSTACLE/BETWEEN next frame
+            #lines has no bearing on BETWEEN anywhere else - this is the ONLY way in: finishing
+            #this WAIT/FORCE sequence while lines reads 11 or 12 (it may have ticked over to 12
+            #mid-maneuver, since lap-line detection runs every frame regardless of state)
+            if lines == 11 or lines == 12:
+                state = BETWEEN
+            else:
+                state = OBSTACLE   # placeholder - redispatched to STRAIGHT/OBSTACLE next frame
             line_detected = False
             turn_delay_time = None
+            left = 0   # one-time reversed steering used - never apply it again
 
-    elif (lines < 12) and CW and (early_orangePx > EARLY_LINE_MIN_PX) and (greenPx > OBSTACLE_TURN):
-        #early sighting of a green block near a CW turn - the "wrong side" case
+    elif state == BETWEEN:
+        speed_value = 140
+        if CW:
+            #CW after 12 lines - no parking-block approach needed, go straight to PARK
+            state = PARK
+        else:
+            #CCW: watch the bottom-right corner for the magenta parking wall filling it in
+            park_box_frame = Frame(park_box_x1, park_box_y1, park_box_x2, park_box_y2, image, [lowMagenta], [highMagenta], frameColor=(255,0,255), source=image_source)
+            park_box_px = park_box_frame.getContour(0, contourColor=(255,0,255))
+
+            if park_box_px >= PARK_BOX_MAGENTA_PX:
+                state = PARK
+
+            #every red/green block is treated as a red block (already merged into red_contours
+            #above), otherwise fall back to wall-following - same as STRAIGHT
+            elif red_contours:
+                steering_value = steering_value_red
+                cv2.line(image, bottom_right_dot, bottom_left_dot, (0,0,255), 2)
+            else:
+                steering_value = wall_follow(image, image_source)
+
+    elif CW and (early_orangePx > EARLY_LINE_MIN_PX) and ((lines >= 11) or (greenPx > OBSTACLE_TURN)):
+        #early sighting of a green block near a CW turn - the "wrong side" case (or, at lines>=11, forced regardless of any block)
         print("wait green")
         state = WAIT
+        if time.time() - start_time_turn_count > 1.5:
+            turn_count += 1
+            start_time_turn_count = time.time()
         wait_start_time = time.time()
 
-    elif (lines < 12) and CCW and (early_bluePx > EARLY_LINE_MIN_PX) and (redPx > OBSTACLE_TURN):
-        #early sighting of a red block near a CCW turn - the "wrong side" case
+
+
+    elif CCW and (early_bluePx > EARLY_LINE_MIN_PX) and ((lines >= 11) or (redPx > OBSTACLE_TURN)):
+        #early sighting of a red block near a CCW turn - the "wrong side" case (or, at lines>=11, forced regardless of any block)
         print("wait red")
         state = WAIT
+        if time.time() - start_time_turn_count > 1.5:
+            turn_count += 1
+            start_time_turn_count = time.time()
         wait_start_time = time.time()
 
     elif line_detected:
@@ -503,29 +569,7 @@ while True:
     else:
         turn_delay_time = None
 
-        if lines >= 12:
-            state = BETWEEN
-
-            if CW:
-                #CW after 12 lines - no parking-block approach needed, go straight to PARK
-                state = PARK
-            else:
-                #CCW: watch the bottom-right corner for the magenta parking wall filling it in
-                park_box_frame = Frame(park_box_x1, park_box_y1, park_box_x2, park_box_y2, image, [lowMagenta], [highMagenta], frameColor=(255,0,255), source=image_source)
-                park_box_px = park_box_frame.getContour(0, contourColor=(255,0,255))
-
-                if park_box_px >= PARK_BOX_MAGENTA_PX:
-                    state = PARK
-
-                #every red/green block is treated as a red block (already merged into red_contours
-                #above), otherwise fall back to wall-following - same as STRAIGHT
-                elif red_contours:
-                    steering_value = steering_value_red
-                    cv2.line(image, bottom_right_dot, bottom_left_dot, (0,0,255), 2)
-                else:
-                    steering_value = wall_follow(image, image_source)
-
-        elif red_contours or green_contours:
+        if red_contours or green_contours:
             #OBSTACLE: handle whichever blob is closer first, and only draw that blob's line
             print("obs")
             state = OBSTACLE
@@ -599,6 +643,7 @@ while True:
 ser.write(f"85 0 1 {lines} OPEN\n".encode())
 print("FINISH")
 time.sleep(0.10)
+bno.cleanup()
 ser.close() #close serial connection when done
 
 cv2.destroyAllWindows() #clean up windows when done

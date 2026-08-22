@@ -1,4 +1,6 @@
 #IMPORTS
+import sensor.bno055 as bno
+
 import time 
 
 import serial
@@ -6,6 +8,8 @@ import serial
 import numpy as np #where you store hue/color values
 
 from frames import Frame #define your color ranges and other frame-related functions
+
+import math
 
 #get camera working 
 from picamera2 import Picamera2
@@ -22,10 +26,12 @@ picam2.start()
 time.sleep(2)  # Allow camera to warm up 
 
 #getting serial connection working
-ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
+ser = serial.Serial('/dev/ttyUSB0', 19200, timeout=1)
 time.sleep(2)
 
-import math
+#IMU
+bno.initialize() 
+initial = bno.get_initial_heading()
 
 #What direction are we going? CW or CCW?
 CW = 0
@@ -52,7 +58,7 @@ highOrange = np.array([35, 255, 255])
 
 #MICROBIT VALUES
 steering_value = 0 # Calculated steering value to add or subtract from center value
-center = 80 #center value for steering, adjust as needed (was 85)
+center = 100 #center value for steering, adjust as needed (was 85)
 steering_margin = 40 
 speed_value = 255 # Speed, 160 is lowest, 255 is highest
 on = 1
@@ -60,33 +66,27 @@ on = 1
 #Last sent message sent to serial to compare against current message to avoid sending duplicates
 last_message = ""
 
-#wall error kp steering, kp - 0.45
-kp = 0.5
-kd = 0.22
-previous_error = 0 
-
-alpha = 0.5 # slightly stronger smoothing
-max_steering_correction = 40
-
-# Lane estimation for partial visibility handling
-track_width = 240
-
-#estimated_lane_width = 240  # initial guess in pixels (tweakable)
-#lane_width_alpha = 0.05      # smoothing factor for running average
-
-last_corridor_center = None
-last_detection_time = 0
-filtered_center = None
+#WALL FOLLOWING VALUES (ported from obstaclev2.py's wall_follow(), used by STRAIGHT)
+wfx1, wfy1, wfx2, wfy2 =  0, 220, 640, 260
+wf_gap_half_width = 100   # tune this - each gap edge sits this many pixels out from wall_frame's own center
+kp_wall = 0.15
+kd_wall = 0.2
+kp_turn = 1
+dead_zone_px = 20
+previous_error_wall = 0
 
 #timer variables
 start_time_line = time.time()
 start_time_finshed = 0
 
-turn_delay = 0.25  # seconds to wait before confirming a turn
-turn_execution_time = 0.4  # seconds to execute the turn
+turn_delay = 0.15  # seconds to wait before confirming a turn
+TURN_ANGLE_TARGET = 90   # degrees to rotate (IMU heading) before exiting TURNING
+# HEADING_TURN_SIGN = 1    # flip to -1 on the field if CW/CCW come out reversed for this IMU's mounting
 
 turn_delay_time = None
-turning_start_time = 0
+turning_start_heading = None
+turn_count = 0   # increments every time TURNING is entered - target_heading is always turn_count*90 absolute, so turns snap to true cardinal headings instead of drifting off each other
+target_heading = None
 
 #STATES
 STRAIGHT = 0
@@ -95,8 +95,69 @@ TURNING = 1
 state = STRAIGHT
 indicator = "STRA"
 
+#wall-following steering, ported from obstaclev2.py's STRAIGHT state (no block detection here)
+def wall_follow(image):
+    global previous_error_wall
+
+    #scan gap re-centered on wall_frame's own midpoint every call
+    wall_center_x = (wfx1 + wfx2) // 2
+    gap_left_x = wall_center_x - wf_gap_half_width
+    gap_right_x = wall_center_x + wf_gap_half_width
+
+    wall_frame = Frame(wfx1, wfy1, wfx2, wfy2, image, [lowBlack], [highBlack], frameColor=(255,0,0), leftZoneX=gap_left_x, rightZoneX=gap_right_x)
+    left_x, right_x, wall_mask, scan_y1, scan_y2 = wall_frame.getInnerEdgesSplit(color=0, col_threshold=20, contourColor=(255,255,255))
+
+    mid_y = (scan_y1 + scan_y2) // 2
+    if left_x is not None:
+        cv2.circle(image, (left_x, mid_y), 6, (0,255,255), -1)   # active left boundary
+    if right_x is not None:
+        cv2.circle(image, (right_x, mid_y), 6, (255,0,255), -1)  # active right boundary
+    if (left_x is not None) and (right_x is not None):
+        cv2.line(image, (left_x, mid_y), (right_x, mid_y), (0,165,255), 2)
+
+    img_center = (wall_frame.x1 + wall_frame.x2) // 2
+
+    if (left_x is not None) and (right_x is not None):
+        corridor_center = (left_x + right_x) // 2
+    elif left_x is not None:
+        corridor_center = (left_x + wall_frame.x2) // 2
+    elif right_x is not None:
+        corridor_center = (right_x + wall_frame.x1) // 2
+    else:
+        corridor_center = img_center
+
+    cv2.circle(image, (int(corridor_center), mid_y), 6, (0,255,0), -1)  # corridor midpoint
+    cv2.line(image, (img_center, scan_y1), (img_center, scan_y2), (255,255,255), 1)  # image center reference line
+
+    dz_x1 = img_center - dead_zone_px
+    dz_x2 = img_center + dead_zone_px
+    dz_y1 = scan_y1 - 10
+    dz_y2 = scan_y2 + 10
+    cv2.rectangle(image, (dz_x1, dz_y1), (dz_x2, dz_y2), (200,200,200), 1)
+
+    wall_error = corridor_center - img_center
+    if abs(wall_error) <= dead_zone_px:
+        wall_error = 0
+
+    cv2.line(image, (img_center, mid_y), (int(corridor_center), mid_y), (0,0,255), 2)  # error line
+
+    #PD control for wall-following steering
+    derivative_wall = wall_error - previous_error_wall
+    control_signal_wall = (kp_wall * wall_error) + (kd_wall * derivative_wall)
+    previous_error_wall = wall_error
+
+    result = center + control_signal_wall
+    result = max(center - steering_margin, min(center + steering_margin, result))
+    result = round(result)
+
+    print(f"Wall Left X: {left_x}, Wall Right X: {right_x}, Corridor Center: {corridor_center}, Img Center: {img_center}, Wall Error: {wall_error}, Steering Value: {result}")
+    return result, left_x, right_x
+
 #main loop to show camera feed
 while True:
+
+    #imu heading
+    heading = bno.get_relative_heading(initial)
 
     #camera feed
     image = picam2.capture_array()
@@ -106,48 +167,42 @@ while True:
     
 
     #create frames
-    # Bottom scan for walls (black) across much of the image width
-    #x1 = 20
-    wall_frame = Frame(20,150, 620, 260, image, [lowBlack], [highBlack], frameColor=(255, 0, 0))
     # keep existing bottom color checks for lap/dir detection
-    bottom_frame = Frame(120, 370, 520, 470, image, [lowBlue, lowOrange], [highBlue,  highOrange])
-    bluePx = bottom_frame.getContour(0, contourColor=(255, 85, 0)) #blue
+    bottom_frame = Frame(295, 405, 345, 455, image, [lowBlue, lowOrange], [highBlue,  highOrange])
     orangePx = bottom_frame.getContour(1, contourColor =(0, 128, 255)) #orange
+    bluePx = bottom_frame.getContour(0, contourColor=(255, 85, 0)) #blue
 
-    # # Straight wall detection (black) frame for turning
-    # front_frame = Frame(250, 200, 390, 270, image, [lowBlack], [highBlack], frameColor = (255,0,0))
-    # frontBlack = front_frame.getContour(0, contourColor=(0,255,0))
-
-    # Use split horizontal scanline to find inner left/right wall edges (black)
-    # Skip wall detection entirely while turning so it can't influence steering/state decisions
+    # single wall scan for the whole frame (steering + side_wall_missing) - skipped while
+    # turning so it can't influence steering/state decisions
     if state != TURNING:
-        left_x, right_x, wall_mask, scan_y1, scan_y2 = wall_frame.getInnerEdgesSplit(color=0, scan_height=40, col_threshold=20, contourColor=(0,255,0))
+        wall_steering, left_x, right_x = wall_follow(image)
     else:
-        left_x, right_x, wall_mask = None, None, None
-        scan_y1, scan_y2 = wall_frame.y1, wall_frame.y2
+        wall_steering, left_x, right_x = None, None, None
 
 
     #count orange line when detected (laps)
-    if (orangePx > 1000) and (orangePx < 40000):
+    if (orangePx > 200) and (orangePx < 2500):
         if time.time() - start_time_line > 1.5: #if orange line is detected for more than 1 second, count it
             orangeLine += 1
             start_time_line = time.time() #reset timer when orange line is detected
             line_detected = True
-    
+
     #count BLUE line when detected (laps)
-    if (bluePx > 1000) and (bluePx < 40000):
+    if (bluePx > 200) and (bluePx < 2500):
         if time.time() - start_time_line > 1.5: #if blue line is detected for more than 1 second, count it
             blueLine += 1
             start_time_line = time.time() #reset timer when blue line is detected
             line_detected = True
-    
+
     lines = max(orangeLine, blueLine)
 
     #CW OR CCW?
     if (CW == 0) and (CCW == 0):
-        if 500 < orangePx < 10000:
+        if 200 < orangePx < 2500:
+            print("cw")
             CW = 1
-        elif 500 < bluePx < 10000:
+        elif 200 < bluePx < 2500:
+            print("ccw")
             CCW = 1
     elif state != TURNING and (CW == 1) and (CCW == 0):
         side_wall_missing = right_x is None
@@ -159,87 +214,6 @@ while True:
     #     frontBlack_detected = True
 
     if state == STRAIGHT:
-        #------------------------------------------------------------------------------------------------------
-        # Steering based on corridor center from inner edges with partial-visibility handling
-        # Target/error are based on wall_frame's own x-bounds, not the full camera frame
-        img_center = (wall_frame.x1 + wall_frame.x2) // 2
-        corridor_center = None
-        steering_error = 0
-
-        # Determine corridor center depending on which inner edges are available
-        if (left_x is not None) and (right_x is not None):
-            track_width = abs(right_x - left_x)
-            corridor_center = (left_x + right_x) // 2
-            last_corridor_center = corridor_center
-            last_detection_time = time.time()
-            detection_mode = 'both'
-
-        elif (left_x is not None) and (right_x is None):
-            # Only left wall visible: project the missing right wall and compute midpoint
-            inferred_right = wall_frame.x2
-            corridor_center = (left_x + inferred_right) // 2
-            # draw inferred right wall for debugging
-            cv2.line(image, (int(inferred_right), scan_y1), (int(inferred_right), scan_y2), (0,180,0), 1)
-            last_corridor_center = corridor_center
-            last_detection_time = time.time()
-            detection_mode = 'left_only'
-
-        elif (right_x is not None) and (left_x is None):
-            # Only right wall visible: project the missing left wall and compute midpoint
-            inferred_left = wall_frame.x1
-            corridor_center = (right_x + inferred_left) // 2
-            # draw inferred left wall for debugging
-            cv2.line(image, (int(inferred_left), scan_y1), (int(inferred_left), scan_y2), (0,180,0), 1)
-            last_corridor_center = corridor_center
-            last_detection_time = time.time()
-            detection_mode = 'right_only'
-
-        else:
-            # Neither wall visible: fall back to last known corridor center or wall_frame center
-            corridor_center = img_center
-            detection_mode = 'none'
-
-        
-        # Compute steering error from corridor center
-        
-        if filtered_center is None:
-            filtered_center = corridor_center
-
-        #update filter eery frame
-        filtered_center = (alpha * corridor_center) + ((1 - alpha) * filtered_center)
-        #use filtered value instead of raw for smoother steering corrections
-        steering_error = filtered_center - img_center
-
-        derivative = steering_error - previous_error
-
-        # Dead zone (pixels) around image center where steering is suppressed
-        dead_zone_px = 20  # configurable
-
-        # Draw debug overlays depending on detections
-        # inner-edge markers
-        if left_x is not None:
-            cv2.circle(image, (left_x, (scan_y1+scan_y2)//2), 6, (0,255,255), -1)    # left wall inner-edge
-        if right_x is not None:
-            cv2.circle(image, (right_x, (scan_y1+scan_y2)//2), 6, (255,0,255), -1)   # right wall inner-edge
-
-        # corridor center and image center
-        cv2.circle(image, (int(corridor_center), (scan_y1+scan_y2)//2), 6, (0,255,0), -1) # corridor center
-        cv2.line(image, (img_center, scan_y1), (img_center, scan_y2), (255,255,255), 1) # image center line
-
-        # Dead-zone rectangle centered at image center
-        dz_x1 = img_center - dead_zone_px
-        dz_x2 = img_center + dead_zone_px
-        dz_y1 = scan_y1 - 10
-        dz_y2 = scan_y2 + 10
-        cv2.rectangle(image, (dz_x1, dz_y1), (dz_x2, dz_y2), (200,200,200), 1)
-
-        # If inside dead zone, zero steering error
-        if abs(steering_error) <= dead_zone_px:
-            steering_error = 0
-
-        # Draw error line (image center -> corridor center)
-        cv2.line(image, (img_center, (scan_y1+scan_y2)//2), (int(corridor_center), (scan_y1+scan_y2)//2), (0,0,255), 2)
-
         #check if it is turning
         if line_detected and side_wall_missing:
             if turn_delay_time is None:
@@ -248,52 +222,30 @@ while True:
 
             if time.time() - turn_delay_time > turn_delay:
                 state = TURNING
-                turning_start_time = time.time()
+                turn_count += 1
+                #absolute cardinal target (turn_count*90), not relative to turning_start_heading -
+                #so turns snap to true 90/180/270/0 instead of drifting off each other's small errors
+                target_heading = (turn_count * TURN_ANGLE_TARGET) % 360 if CW else (-turn_count * TURN_ANGLE_TARGET) % 360
                 turn_delay_time = None  # reset for next detection
                 print("ENTER TURN")
         else:
-           
-           # Reset if the condition is no longer true
+            # Reset if the condition is no longer true
             turn_delay_time = None
-
-            # Stronger PD controller with a capped correction range
-            control_signal = (kp * steering_error) + (kd * derivative)
-            control_signal = max(-max_steering_correction, min(max_steering_correction, control_signal))
-            steering_value = center + control_signal
-            previous_error = steering_error  # update for next loop
-
-            steering_error = round(steering_error)
-
-
-            error_abs = abs(steering_error)
-            if error_abs < 10:
-                speed_value = 230
-            elif error_abs < 40:
-                speed_value = 210
-            elif error_abs < 60:
-                speed_value = 190
-            else:
-                speed_value = 170
-
-            print(f"Mode: {detection_mode}, Corridor center: {corridor_center}, Img center: {img_center}, Error: {steering_error}, Steering Value: {steering_value}")
-            steering_value = round(steering_value / 5) * 5 #round to nearest 5 for smoother steering
-            print(f"Rounded Steering Value: {steering_value}")
+            steering_value = wall_steering
 
     #------------------------------------------------------------------------------------------------------
     #if the state is turning
     elif state == TURNING:
-        if CW:
-            steering_value = 135
-        elif CCW:
-            steering_value = 55
+        turn_error = ((target_heading - heading + 180) % 360) - 180
+        steering_value = turn_error * kp_turn
+        turned_enough = abs(turn_error) <= 2
 
-        if time.time() - turning_start_time > turn_execution_time: #if it has been turning for more than the execution time, go back to straight mode
+        if turned_enough: #if the heading has rotated the target angle, go back to straight mode
             state = STRAIGHT
             line_detected = False
             # frontBlack_detected = False
             side_wall_missing = False
-            previous_error = 0
-            filtered_center = None
+            previous_error_wall = 0
             turn_delay_time = None
             print("EXIT TURN")
     
@@ -323,22 +275,19 @@ while True:
     cv2.putText(image, f"Steering: {steering_value}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
     cv2.putText(image, f"Direction: {'CW' if CW else 'CCW'}", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
     cv2.putText(image, f"State: {state}", (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+    cv2.putText(image, f"Heading: {heading}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
     #send values to micrbit through serial connections
     print(f"Steering: {steering_value}, Speed: {speed_value}, ON?: {on}, LINES: {lines}, STATE: {state}")
-    print(f"Line Detected: {line_detected}, Empty Wall: {side_wall_missing}, cw: {CW}, ccw: {CCW}\n")
+    print(f"Line Detected: {line_detected}, Empty Wall: {side_wall_missing}, cw: {CW}, ccw: {CCW}")
+    print(f"Heading: {heading}, Turning Start Heading: {heading}\n")
 
-    if state == STRAIGHT:
-        indicator = "STRA"
-    elif state == TURNING:
-        indicator = "TURN"
-    else:
-        indicator = "OOPS"
+    indicator = state
 
     message = (f"{steering_value} {speed_value} {on} {lines} {indicator}\n")
 
     # only send if different
-    if message != last_message:
+    if True: #message != last_message:
         ser.write(message.encode())
         ser.flush()
 
@@ -351,7 +300,7 @@ while True:
 
     # Check for 'q' key press to exit
     if cv2.waitKey(1) & 0xFF == ord('q'):
-        ser.write(f"85 0 1 {lines} OPEN\n".encode())
+        ser.write(f"100 0 1 {lines} OPEN\n".encode())
         time.sleep(0.05)
         break
 
@@ -359,6 +308,7 @@ while True:
 ser.write(f"85 0 1 {lines} OPEN\n".encode())
 print("FINISH")
 time.sleep(0.10)
+bno.cleanup()
 ser.close() #close serial connection when done
 
 cv2.destroyAllWindows() #clean up windows when done
