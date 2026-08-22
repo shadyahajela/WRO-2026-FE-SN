@@ -257,7 +257,13 @@ Objective:
   </tr>
   </table>
 
-  yapyapyapyapyapyapyap
+  The power system is essential to the robot’s ability to operate reliably throughout the competition. For this project, our robot is powered by a 3-cell (3S) Lithium Polymer (LiPo) battery, similar to the PALO 3S LiPo battery. The battery provides a nominal voltage of 11.1V, with a fully charged voltage of 12.6V, while its high discharge capability allows it to supply sufficient current to the motors and other components. The battery’s high energy density also provides a good balance between runtime, weight, and available power, making it well suited for a mobile competition robot.
+
+  The JGA25-371 motors operate from the 12V supply provided by the battery, while the L298N motor driver regulates the power delivered to the motors based on commands from the Arduino Nano. The higher voltage of the 3S battery allows the motors to operate without requiring a step-up converter, simplifying the power system and reducing unnecessary conversion losses. A step-down converter is used to reduce the battery voltage to the appropriate levels required by the Raspberry Pi 5, Arduino Nano, camera, IMU, and other electronics. This separates the high-current motor supply from the lower-voltage electronics while allowing the entire robot to be powered from a single battery.
+
+  The Raspberry Pi 5 serves as the vehicle’s main processing unit and requires a stable 5V supply. The step-down converter provides the required regulated voltage, ensuring that the Raspberry Pi and other electronics receive consistent power during operation. This setup allows the robot to run its sensors, process camera data, control the motors, and make navigation decisions without relying on separate batteries for each subsystem.
+
+  IMAGE OF BATTERY ON ROBOT
 
   **Motor Driver:** L298N
   
@@ -279,6 +285,8 @@ Objective:
     </td>
   </tr>
   </table>
+
+  We chose the L298N motor driver because it provides reliable control of our JGA25-371 DC motors while being compatible with the Arduino Nano. It supports the 12V supply from our 3-cell LiPo battery and allows the Arduino to control motor direction and speed through its PWM inputs. This provides a simple and reliable connection between the robot’s power system and drivetrain, making it well suited for our differential drive system.
 
   ## 2.2 Sensor and Camera
   
