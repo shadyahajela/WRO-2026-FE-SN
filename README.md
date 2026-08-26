@@ -350,7 +350,7 @@ The power system is essential to the robot’s ability to operate reliably throu
 
   **Selection Reasoning:** 
 
-    The BNO055 is a compact 9-axis IMU that combines a 3-axis accelerometer, 3-axis gyroscope, and 3-axis magnetometer with an onboard processor for sensor fusion. It provides orientation data such as heading, Euler angles, linear acceleration, and gravity direction, reducing the need for complex external calculations.
+    Considering we wanted to have a relative compass to reduce additional code in the Arduino, we chose the BNO055. The BNO055 is a compact 9-axis IMU that combines a 3-axis accelerometer, 3-axis gyroscope, and 3-axis magnetometer with an onboard processor for sensor fusion. It provides orientation data such as heading, Euler angles, linear acceleration, and gravity direction, reducing the need for complex external calculations.
     
     We mounted the BNO055 near the center of the chassis to provide stable and consistent measurements. It communicates with the Arduino Nano through the I²C interface, continuously providing real-time orientation and angular velocity data. This helps the robot maintain an accurate heading and make smoother steering adjustments, which are especially important during obstacle navigation.
   
