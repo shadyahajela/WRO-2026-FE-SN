@@ -288,6 +288,12 @@ The power system is essential to the robot’s ability to operate reliably throu
 
   We chose the L298N motor driver because it provides reliable control of our JGA25-371 DC motors while being compatible with the Arduino Nano. It supports the 12V supply from our 3-cell LiPo battery and allows the Arduino to control motor direction and speed through its PWM inputs. This provides a simple and reliable connection between the robot’s power system and drivetrain, making it well suited for our differential drive system.
 
+
+OLD MOTOR DRIVER IMAGE: DRV8871
+
+<img width="140" height="92.7" alt="image" src="https://github.com/user-attachments/assets/1ebcd3af-6231-4427-b338-a13d668f537a" />
+
+
   ## 2.2 Sensor and Camera
   
   **SainSmart Wide-Angle Camera:** 
