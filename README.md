@@ -356,9 +356,9 @@ OLD MOTOR DRIVER IMAGE: DRV8871
 
   **Selection Reasoning:** 
 
-    Considering we wanted to have a relative compass to reduce additional code in the Arduino, we chose the BNO055. The BNO055 is a compact 9-axis IMU that combines a 3-axis accelerometer, 3-axis gyroscope, and 3-axis magnetometer with an onboard processor for sensor fusion. It provides orientation data such as heading, Euler angles, linear acceleration, and gravity direction, reducing the need for complex external calculations.
+Considering we wanted to have a relative compass to reduce additional code in the Arduino, we chose the BNO055. The BNO055 is a compact 9-axis IMU that combines a 3-axis accelerometer, 3-axis gyroscope, and 3-axis magnetometer with an onboard processor for sensor fusion. It provides orientation data such as heading, Euler angles, linear acceleration, and gravity direction, reducing the need for complex external calculations.
     
-    We mounted the BNO055 near the center of the chassis to provide stable and consistent measurements. It communicates with the Arduino Nano through the I²C interface, continuously providing real-time orientation and angular velocity data. This helps the robot maintain an accurate heading and make smoother steering adjustments, which are especially important during obstacle navigation.
+We mounted the BNO055 near the center of the chassis to provide stable and consistent measurements. It communicates with the Arduino Nano through the I²C interface, continuously providing real-time orientation and angular velocity data. This helps the robot maintain an accurate heading and make smoother steering adjustments, which are especially important during obstacle navigation.
   
   
   ## 2.3 Processing Units
@@ -480,42 +480,22 @@ OLD MOTOR DRIVER IMAGE: DRV8871
 
 # 3. Software Architecture
 
-### 3.1 Code Implementation 
+# 4. Source Code
 
-### 3.2 Modularity 
+# 5. List of Components
 
-### 3.3 Code Comments 
-
-### 3.4 State Machine 
-
-### 3.5 PID control
-
-### 3.6 Algorithm
-
-### 3.7 Lane Following
-
-### 3.8 Obstacle
-
-### 3.9 Parking
-
-### 3.10 Microcontroller code
-
-### 3.11 Testing / Tuning Process
-
-### 3.12 Performance Measurement 
-
-### 3.13 Flow charts
-
-# 4. Subsystem Thinking and Engineering Decisions
-
-### 4.1 Subsystem integration with constraints and tradeoffs
-
-### 4.2 Iteration Cycles With Reasoning
-
-### 4.3 Engineering Reasoning With Risk Analysis
-
-
-
+| Item | Product Name | Description | Manufacturer | Quantity | Source/Supplier | Usage | Total Cost |
+|------------|------------|-----------|----------------|------------|------------|------------|------------|
+| 1 | pn | Raspberry Pi 5 | manufacturer | 1 | source | usage | cost |
+| 2 | pn | Arduino Nano | manufacturer | 1 | source | usage | cost |
+| 3 | pn | Arduino Nano Shield | manufacturer | 1 | source | usage | cost |
+| 4 | pn | L298N Motor Driver | manufacturer | 1 | source | usage | cost |
+| 5 | pn | MG90S Servo | manufacturer | 1 | source | usage | cost |
+| 6 | pn | WLTOYS 144001 Differential | manufacturer | 1 | source | usage | cost |
+| 7 | pn | JGA25-371 Motor w/ Encoder | manufacturer | 1 | source | usage | cost |
+| 8 | pn | SainSmart Wide-Angle Camera | manufacturer | 1 | source | usage | cost |
+| 9 | pn | BNO055 IMU | manufacturer | 1 | source | usage | cost |
+| 10 | pn | Step-Down Voltage Converter | manufacturer | 1 | source | usage | cost |
 
 
 
