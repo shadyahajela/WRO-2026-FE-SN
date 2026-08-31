@@ -100,10 +100,17 @@ We used a metal WLTOYS 144001 differential in our robot, allowing the left and r
   </table>
 
   **Mounting:**
-  gseiohgsr
+
+  * Installed using an inset groove system in the chassis screwed to a detachable 3D-printed motor differential housing clamp that is placed above the differential gear compartment. This will allow for future changes to accommodate different motors and gears if the need arise.
+
+  IMAGE
+
+  * Wires connected to Arduino Nano and Motor Driver.
+  * Spike Prime wheels fitted onto the LEGO motor axle.
+
 
   **Considerations:**
-  fwesng
+  An alternative would be a NEMA 17 stepper motor, which can provide precise speed and position control. However, the NEMA 17 is larger and heavier, and would require a more complex driver setup, making it less suitable for our robot. The JGA25-371 was chosen instead because it provides sufficient speed and torque while being more compact and easier to integrate.
   
 ## 1.2 Steering System
 
@@ -162,11 +169,13 @@ To achieve accurate and consistent steering, we used a combination of CAD adjust
 * The final Onshape design was then used to produce the 3D-printed steering assembly.
 
 **Mounting:**
-abfaegneog
+
+* Screwed into a platform plate in front of the chassis, connected to the steering mechanism.
+
 image
 
 **Considerations:**
-While the MG90S is suitable for our current steering system, we considered upgrading to the MG996R because it offers significantly higher torque and a more durable metal gear system. The increased torque would allow the servo to handle greater resistance from the steering mechanism and front wheels, providing more consistent steering and reducing the possibility of the servo struggling or losing its position during sharper turns. Its stronger construction would also make it more reliable under repeated use and during rapid steering adjustments or uneven surfaces. Although the MG996R is larger and requires more power than the MG90S, these disadvantages could be managed by modifying the chassis and power system. Overall, the MG996R would provide a stronger and more robust steering system, making it a potential upgrade if additional steering torque and durability are needed.
+An alternative would be the MG996R servo, which provides higher torque and more durable metal gears. However, it is larger and requires more power than the MG90S, which would require modifications to our chassis and power system. The MG90S was chosen instead because it is more compact and sufficient for our steering system.
 
 ## 1.3 Chassis Design
 
