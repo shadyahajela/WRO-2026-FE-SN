@@ -70,6 +70,13 @@ Our team also wanted the car to be stable and fast (and colorful if we can help 
     </td>
   </tr>
   </table>
+
+ **Selection Reasoning** 
+*It is compact and lightweight, allowing us to fit it into our robot easily.
+Built-in encoder, allowing for precise movement and less wiring hassle.
+High torque for pushing the robot with vigor and avoiding stalling.
+The JGA25-371 motor was selected because it combines high torque with integrated encoder feedback, providing both the power and precision required for the WRO Future Engineers competition. The motor drives the rear wheels through a metal WLTOYS 144001 differential, which allows the robot to maintain smooth and balanced turns while reducing the difference in rotational speed between the left and right wheels. By distributing torque between both LEGO SPIKE Prime wheels, the differential minimizes wheel slip and improves stability during cornering. The integrated Hall encoder provides real-time feedback for closed-loop control, allowing the robot to accurately measure wheel rotation, regulate speed, and maintain consistent movement throughout each run. Unlike smaller motors, the JGA25-371 provides sufficient torque to support the drivetrain while maintaining reliable performance under varying loads. The combination of encoder feedback, the metal differential, and the SPIKE Prime wheels creates a drivetrain that balances power, stability, and precision, making it well-suited for the competition environment.*
+
   
   **Selection Reasoning:**
   The JGA25-371 was selected for its high torque, compact size, reliability, and integrated Hall-effect encoder. Its torque provides sufficient force under varying loads while reducing the likelihood of stalling, and the encoder provides rotational feedback for precise movement. Compared with smaller motors, it adds some weight and increases the possibility of wheel slip, but we accepted this tradeoff because torque and controllability were more important to our drivetrain requirements.
@@ -79,6 +86,8 @@ The motor drives the rear wheels through a metal WLTOYS 144001 differential, whi
 The encoder is integrated into the vehicle's closed-loop control system through the Arduino Nano and motor driver. It measures wheel rotation so the controller can regulate speed and distance, improving repeatability between runs and allowing the system to respond to changes in load. To manage risks such as wheel slip, mechanical backlash, and motor stress, motor acceleration and speed are controlled in software and the drivetrain is calibrated using encoder feedback. This integration allows the mechanical and software systems to work together to produce controlled and repeatable motion.
 
   **Differential**
+*We used a metal WLTOYS 144001 differential in our robot, which allows the left and right rear wheels to rotate at different speeds while turning, reducing tire drag and improving turning efficiency. This setup provides smoother and more controlled cornering by distributing torque between both rear wheels and compensating for the difference in the distance each wheel travels during a turn. The differential improves maneuverability and stability, particularly during the obstacle challenge and parallel parking, where precise and repeatable movements are essential.*
+
 We used a metal WLTOYS 144001 differential in our robot, allowing the left and right rear wheels to rotate at different speeds during turns, reducing tire scrub and improving turning efficiency. This provides smoother cornering by distributing torque between both wheels and compensating for the different distances they travel. The differential improves maneuverability and stability during the Obstacle Challenge and parallel parking, where precise and repeatable movement is essential, while its metal construction provides durability under drivetrain loads.
   
   <table>
@@ -335,20 +344,19 @@ OLD MOTOR DRIVER IMAGE: DRV8871
 
   **Selection Reasoning:** 
 
-  * 160° wide field of view from the wide-angle lens captures a larger area, improving the robot’s ability to detect and track its surroundings.
-  * 5MP resolution provides clear and detailed images for vision-based tasks.
-  * 1080p video at 30 FPS provides smooth real-time footage for image processing and object detection.
-  * Compact and lightweight design allows the camera to be easily mounted on the robot without adding significant weight.
+160° wide field of view captures more of the course, reducing blind spots and improving environmental awareness.
+5MP resolution provides enough detail to reliably distinguish course features and colored markers.
+1080p at 30 FPS provides responsive visual data for real-time image processing and object detection.
+Compact and lightweight design reduces its impact on vehicle weight and balance while allowing flexible mounting.
 
-  This setup provides a 160° wide-angle view, improving the robot’s environmental awareness during both the Open Challenge and Obstacle Challenge. The camera captures course elements such as walls, pillars, colored markers, parking spaces, and lane lines, providing visual information for navigation and decision-making.
+This setup provides a 160° wide-angle view that increases the robot's visual coverage during both the Open Challenge and Obstacle Challenge. The camera supplies visual information about walls, pillars, colored markers, parking spaces, and lane lines, which is combined with other sensor data to support navigation and decision-making. The main tradeoff is balancing wider coverage with image processing requirements, so the selected resolution and frame rate provide sufficient detail and responsiveness without unnecessarily increasing processing demands.
 
-  **The camera is mainly used for the following tasks:**
+The camera is mainly used for the following tasks:
 
-  * Detect and determine wall positions.
-  * Identify pillar colors and types.
-  * Recognize parking zones.
-  * Track path lines and boundaries.
-
+- Detect and determine wall positions.
+- Identify pillar colors and types.
+- Recognize parking zones.
+- Track path lines and boundaries.
 
    **BNO055 Inertial Measurement Unit (IMU):** 
 
@@ -472,22 +480,6 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
 | Arduino Nano Shield | 5 | 0.019 | 0.030 | 0.095 |
 | Step-Down Converter | — | — | — | η ≈ 88% |
   
-
-
-+ **Torque Calculations:**
-  [insert torque calculation image]
-
-+ **3D Printed Structure:** Base layer design with a plate that holds the raspberry pi and a mounting plate that holds the step down voltage converter and Arduino Nano.
-  [insert cross-sections and isometric and face images of robot]
-
-+ **Custom Mounts:** Mounts and holders for servo, camera, raspberry pi, and a joint mount for step down voltage converter and Arduino Nano. Custom Motor-Differential, Servo-Axle, and Differential-Axle coupling.
-  [pictures and link]
-
-+ **Wheels:** Spike Prime wheels (56mm diameter, 14mm thick) for compactness and grip.
-  [link to explanation]
-
-+ **Iterations:** As you can see in the following image, this was an iterative project with many versions of each part.
-  [insert image of all iterations]
 
 
 ###  Power System Architecture
