@@ -408,9 +408,18 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
   </tr>
   </table>
 
-  * The Raspberry Pi 5 acts as the robot’s primary processing unit, handling high-level decision-making, image processing, and the integration of sensor data.
-  * Equipped with a quad-core Arm Cortex-A76 CPU and 8GB of RAM, it is capable of processing real-time camera data for applications such as mapping, obstacle detection, and path planning.
-  * Its compact design also allows it to be easily mounted onto the chassis without adding significant weight.
+  *Subsystem Integration:*
+  The Raspberry Pi 5 acts as the robot’s primary processing unit, handling high-level decision-making, image processing, and sensor-data integration. Its processing capability allows it to run real-time vision, mapping, obstacle detection, and path-planning tasks while communicating with the Arduino Nano for low-level control.
+
+  *Hardware and Software Architecture:*
+  The Raspberry Pi 5’s quad-core Arm Cortex-A76 CPU and 8GB of RAM provide sufficient processing performance for the computational demands of the robot. Its compact form factor also allows it to be mounted directly onto the chassis without significantly increasing the vehicle’s size or weight. It communicates with the Arduino Nano through a serial connection, creating a modular architecture where high-level processing and low-level control are separated.
+
+  *Iterations and Trade-Offs:*
+  We initially tested a Raspberry Pi 4 to reduce power consumption, but testing showed that its lower processing performance caused slower image processing and reduced responsiveness during real-time vision and navigation tasks. We therefore changed to the Raspberry Pi 5, accepting higher power consumption in exchange for significantly improved processing performance and more reliable real-time operation.
+
+  *Risk Analysis and Reliability:*
+  Using the Raspberry Pi 5 reduces the risk of processing bottlenecks affecting navigation and vision performance. Separating high-level processing from the Arduino Nano’s low-level control also prevents computationally intensive tasks from directly interfering with motor and steering control, improving overall system reliability.
+  
 
   **Microcontroller:** Arduino Nano
 
@@ -433,9 +442,24 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
   </tr>
   </table>
 
-  * The Arduino Nano acts as the robot’s low-level controller, managing tasks such as motor control, steering, and sensor input.
-  * It communicates with the Raspberry Pi 5 through a serial connection, separating high-level processing from precise hardware control.
-  * Its fast and reliable response allows for accurate control of the robot’s motors and steering system, resulting in smoother and more consistent movement.
+  *Subsystem Integration:*
+
+  The Arduino Nano was selected as the robot’s low-level controller to handle time-sensitive tasks such as motor control, steering, and encoder/sensor input. This architecture separates high-level decision-making from low-level control, allowing the Raspberry Pi 5 to focus on vision processing, navigation, and path planning while the Arduino maintains consistent motor and steering responses.
+
+  *Hardware and Software Architechture:*
+
+  The Arduino Nano communicates with the Raspberry Pi 5 through a serial connection, creating a modular hardware and software architecture. This reduced the risk of timing conflicts caused by running motor-control tasks alongside computationally intensive processes on the Raspberry Pi. It also allows each subsystem to be tested independently, making troubleshooting and future modifications easier.
+
+  *Iterations and Trade-Offs:*
+
+  Our initial design used a microbit, but research showed that the Arduino Nano offered greater flexibility for external hardware and simpler bidirectional communication with the Raspberry Pi 5. We therefore changed to the Arduino Nano, trading the microbit’s built-in buttons and LEDs for improved subsystem integration and expandability.
+
+  The control system was then iteratively tested and adjusted to improve motor response, steering accuracy, and communication reliability. Using a dedicated microcontroller introduced additional hardware and communication complexity, but provided more predictable real-time control and reduced the dependence of critical drivetrain functions on the Raspberry Pi’s processing workload.
+
+  *Risk Analysis and Reliability:*
+
+  This subsystem architecture improves reliability by isolating critical low-level control from higher-level software. If the vision or navigation software requires significant processing, the Arduino can continue executing motor and steering commands without relying on continuous high-level computation. This separation therefore supports more consistent movement and provides a more robust architecture for the challenges defined by WRO Future Engineers.
+  
 
   **Expansion Board:** Arduino Nano Shield
 
