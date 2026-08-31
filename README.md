@@ -44,6 +44,13 @@ Our team also wanted the car to be stable and fast (and colorful if we can help 
 
 # 1. Mobility Management
 
+To build a self-driving car we need to build a car.
+
+Objectives:
+
+As per the rules, the car must have a steering mechanism and the rear axle driven by a motor.
+Our team also wanted the car to be stable and fast (and colorful if we can help it).
+
 ## 1.1 Drive System
 **Drive Motor:** JGA25-371 DC Motor with _____ encoder. MUST CALCULATE TORQUE (TO-DO)
   <table>
@@ -71,9 +78,9 @@ The motor drives the rear wheels through a metal WLTOYS 144001 differential, whi
 
 The encoder is integrated into the vehicle's closed-loop control system through the Arduino Nano and motor driver. It measures wheel rotation so the controller can regulate speed and distance, improving repeatability between runs and allowing the system to respond to changes in load. To manage risks such as wheel slip, mechanical backlash, and motor stress, motor acceleration and speed are controlled in software and the drivetrain is calibrated using encoder feedback. This integration allows the mechanical and software systems to work together to produce controlled and repeatable motion.
 
-**Differential:**
+  **Differential**
 We used a metal WLTOYS 144001 differential in our robot, allowing the left and right rear wheels to rotate at different speeds during turns, reducing tire scrub and improving turning efficiency. This provides smoother cornering by distributing torque between both wheels and compensating for the different distances they travel. The differential improves maneuverability and stability during the Obstacle Challenge and parallel parking, where precise and repeatable movement is essential, while its metal construction provides durability under drivetrain loads.
-
+  
   <table>
   <tr>
     <td align="center" width="300" >
