@@ -65,15 +65,15 @@ Our team also wanted the car to be stable and fast (and colorful if we can help 
   </table>
   
   **Selection Reasoning:**
-  + It is compact and lightweight, allowing us to fit it into our robot easily.
-  + Built-in encoder, allowing for precise movement and less wiring hassle.
-  + High torque for pushing the robot with vigor and avoiding stalling.
+  The JGA25-371 was selected for its high torque, compact size, reliability, and integrated Hall-effect encoder. Its torque provides sufficient force under varying loads while reducing the likelihood of stalling, and the encoder provides rotational feedback for precise movement. Compared with smaller motors, it adds some weight and increases the possibility of wheel slip, but we accepted this tradeoff because torque and controllability were more important to our drivetrain requirements.
 
-  The JGA25-371 motor was selected because it combines high torque with integrated encoder feedback, providing both the power and precision required for the WRO   Future Engineers competition. The motor drives the rear wheels through a metal WLTOYS 144001 differential, which allows the robot to maintain smooth and balanced turns while reducing the difference in rotational speed between the left and right wheels. By distributing torque between both LEGO SPIKE Prime wheels, the differential minimizes wheel slip and improves stability during cornering. The integrated Hall encoder provides real-time feedback for closed-loop control, allowing the robot to accurately measure wheel rotation, regulate speed, and maintain consistent movement throughout each run. Unlike smaller motors, the JGA25-371 provides sufficient torque to support the drivetrain while maintaining reliable performance under varying loads. The combination of encoder feedback, the metal differential, and the SPIKE Prime wheels creates a drivetrain that balances power, stability, and precision, making it well-suited for the competition environment.
+The motor drives the rear wheels through a metal WLTOYS 144001 differential, which distributes torque while allowing the left and right LEGO SPIKE Prime wheels to rotate at different speeds during turns. This reduces drivetrain binding and tire scrub while providing a durable connection capable of handling the motor's torque. The motor, differential, and wheels were therefore selected as one system to balance power, traction, and turning consistency.
 
-  **Differential:**
-  We used a metal WLTOYS 144001 differential in our robot, which allows the left and right rear wheels to rotate at different speeds while turning, reducing tire drag and improving turning efficiency. This setup provides smoother and more controlled cornering by distributing torque between both rear wheels and compensating for the difference in the distance each wheel travels during a turn. The differential improves maneuverability and stability, particularly during the obstacle challenge and parallel parking, where precise and repeatable movements are essential.
-  
+The encoder is integrated into the vehicle's closed-loop control system through the Arduino Nano and motor driver. It measures wheel rotation so the controller can regulate speed and distance, improving repeatability between runs and allowing the system to respond to changes in load. To manage risks such as wheel slip, mechanical backlash, and motor stress, motor acceleration and speed are controlled in software and the drivetrain is calibrated using encoder feedback. This integration allows the mechanical and software systems to work together to produce controlled and repeatable motion.
+
+**Differential:**
+We used a metal WLTOYS 144001 differential in our robot, allowing the left and right rear wheels to rotate at different speeds during turns, reducing tire scrub and improving turning efficiency. This provides smoother cornering by distributing torque between both wheels and compensating for the different distances they travel. The differential improves maneuverability and stability during the Obstacle Challenge and parallel parking, where precise and repeatable movement is essential, while its metal construction provides durability under drivetrain loads.
+
   <table>
   <tr>
     <td align="center" width="300" >
