@@ -517,7 +517,8 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
 
 ###  Power System Architecture
 
-<img src="v-photos/Screenshot 2026-08-10 193454.png" alt="Ackerman Steering">
+<img width="1167" height="607" alt="image" src="https://github.com/user-attachments/assets/c2637fd0-5c40-4e5f-b6e0-8fb43fe7991f" />
+
 
 # 3. Software Architecture
 
