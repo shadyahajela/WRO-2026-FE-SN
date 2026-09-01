@@ -530,4 +530,59 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
 | 10 | pn | Step-Down Voltage Converter | manufacturer | 1 | source | usage | cost |
 
 
+# 7. 3D Model Files
 
+## 7.1 Onshape CAD Files
+
+We used Onshape to design the 3D models used to make the robot. The files can be found here (hyperlink).
+
+* Assembly Files (hyperlink) - contains the full robot assembly including the part placements.
+* Individual Parts (hyperlink) - includes each 3D component separately.
+
+## 7.2 STL Files
+
+**Chassis and Core Structure**
+
+* Main chassis (link)
+
+**Steering Linkages**
+
+* Ackermann Steering Long Rod (link)
+* Ackermann Steering Short Rod (link)
+* Ackermann Steering Left Tab (link)
+* Ackermann Steering Right Tab (link)
+* Ackermann Steering Hexagonal Rod (link)
+
+**Motor and Transmission**
+
+* Differential Housing (link)
+
+**Wheel and Axle Components**
+
+* Axle Spacer (link)
+
+**Mounting Components**
+
+* Camera and Servo Mount (link)
+* Middle Mount Plate (link)
+* Raspberry Pi Mount Plate (link)
+* Servo Box Mount (link)
+
+**Coupling Parts**
+
+* Motor-Differential Coupling (link)
+* Differential-Axle Coupling (link)
+
+**Miscellaneous**
+
+* Guide Arrow (link)
+
+## 7.3 Slicer Files
+
+All slicer project files (.3mf) used for printing the robot’s components can be found here.
+These files contain optimized slicing settings such as layer height, infill, support, and print orientation for each part.
+
+bjsihgiwobwe
+
+
+# 8. Building Instructions
