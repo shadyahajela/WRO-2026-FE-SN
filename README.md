@@ -490,7 +490,7 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
 
   **Wiring Diagram:**
 
-  IMAGE OF DIAGRAM
+  <img width="1227" height="1776" alt="Wiring Diagram (1)" src="https://github.com/user-attachments/assets/c651a311-7e89-4874-8038-a7da87a27d80" />
 
   ## 2.5 Power Consumption
 
