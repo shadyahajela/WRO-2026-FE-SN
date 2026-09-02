@@ -526,19 +526,28 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
 
 # 5. List of Components
 
-| Item | Product Name | Description | Manufacturer | Quantity | Source/Supplier | Usage | Total Cost |
-|------------|------------|-----------|----------------|------------|------------|------------|------------|
-| 1 | pn | Raspberry Pi 5 | manufacturer | 1 | source | usage | cost |
-| 2 | pn | Arduino Nano | manufacturer | 1 | source | usage | cost |
-| 3 | pn | Arduino Nano Shield | manufacturer | 1 | source | usage | cost |
-| 4 | pn | L298N Motor Driver | manufacturer | 1 | source | usage | cost |
-| 5 | pn | MG90S Servo | manufacturer | 1 | source | usage | cost |
-| 6 | pn | WLTOYS 144001 Differential | manufacturer | 1 | source | usage | cost |
-| 7 | pn | JGA25-371 Motor w/ Encoder | manufacturer | 1 | source | usage | cost |
-| 8 | pn | SainSmart Wide-Angle Camera | manufacturer | 1 | source | usage | cost |
-| 9 | pn | BNO055 IMU | manufacturer | 1 | source | usage | cost |
-| 10 | pn | Step-Down Voltage Converter | manufacturer | 1 | source | usage | cost |
-
+| Major components                                                 | Reference Cost in CAD<br>\- As of Sep 1, 2026<br>\- Taxes not included | Purchase Link for Future Reference                                                            |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Raspberry Pi 5 4GB                                               | $153.95                                                                | [pishop.ca](https://www.pishop.ca/product/raspberry-pi-5-4gb)                                 |
+| Arduino Nano                                                     | $27.19                                                                 | [Amazon.ca](https://www.amazon.ca/dp/B0F6Y7GS4Q)                                              |
+| Arduino Nano Expansion Board                                     | $13.99                                                                 | [Amazon.ca](https://www.amazon.ca/dp/B08198MSJ2)                                              |
+| 1.3" OLED display module SH1106 128x64                           | $5.33                                                                  | [aliexpress.com](https://www.aliexpress.com/item/1005006827988792.html)                       |
+| Sainsmart Wideangle 5MP Camera 160 degree FoV (OV5647 sensor)    | $12.91                                                                 | [Amazon.ca](https://www.amazon.ca/SainSmart-Fish-Eye-Camera-Raspberry-Arduino/dp/B00N1YJKFS)  |
+| Adafruit 9-DOF Absolute Orientation IMU Fusion Breakout - BNO055 | $38.38                                                                 | [Aliexpress.com](https://www.aliexpress.com/item/1005010734176030.html)                       |
+| VL53L0X TOF sensor                                               | $13.99                                                                 | [Amazon.ca](https://www.amazon.ca/dp/B0F1MRW55R)                                              |
+| 12V Battery                                                      | $27.99                                                                 | [Amazon.ca](https://www.amazon.ca/12V-2800mAh-Rechargeable-Battery-Replacement/dp/B0FJ27ZT28) |
+| 12V to 5V Step-down converter (XL4015 with Display)              | $4.80                                                                  | [aliexpress.com](https://www.aliexpress.com/item/1005008401247033.html)                       |
+| JGA25-371 620 rpm 12V Brushless DC motor with Encoder            | $12.78                                                                 | [aliexpress.com](https://www.aliexpress.com/item/1005007546764319.html)                       |
+| WItoys 144010 Metal Differential Gearbox                         | $40.58                                                                 | [aliexpress.com](https://www.aliexpress.com/item/1005005869550963.html)                       |
+| L298N Motor Driver                                               | $11.99                                                                 | [Amazon.ca](https://www.amazon.ca/dp/B0D8G2PZBB)                                              |
+| MG90S Servo motors                                               | $17.02                                                                 | [Amazon.ca](https://www.amazon.ca/dp/B0BWJ4RKGV)                                              |
+| Short USB to USB-C cable                                         | $11.39                                                                 | [Amazon.ca](https://www.amazon.ca/dp/B0DG8J6S1G)                                              |
+| Rocker Switch                                                    | $2.65                                                                  | [aliexpress.com](https://www.aliexpress.com/item/1005007044175800.html)                       |
+| Push Button breakout module                                      | $1.52                                                                  | [aliexpress.com](https://www.aliexpress.com/item/32820437436.html)                            |
+| RGB LED SMD Module                                               | $2.03                                                                  | [aliexpress.com](https://www.aliexpress.com/item/1005006764822374.html)                       |
+| Lego wheels, axles and connectors                                | $50.00                                                                 | Approximately                                                                                 |
+| 3D printed parts for the chassis                                 | $25.00                                                                 | Approximately for one spool of PLA filament                                                   |
+| Total                                                            | $473.49                                                                |                                                                                               |
 
 # 7. 3D Model Files
 
