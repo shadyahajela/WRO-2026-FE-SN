@@ -126,7 +126,8 @@ We used a metal WLTOYS 144001 differential in our robot, allowing the left and r
 **Steering:** Initially Parallel Steering, then changed to Ackermann Steering Geometry, prototyped with LEGO technic parts and later made with 3D printed parts.
   insert images of prototypes
 
-**Steering Motor:** MG90S Micro Servo for precise steering and weight reduction.
+**Steering Motor:** We chose the MG90S Micro Servo for precise steering and weight reduction. The compact size and PWM interface make the MG90S easy to integrate and control using the Arduino Nano. It provides sufficient torque to steer the front wheels accurately and responsively. Its fast response and metal gear construction provide reliable and stable steering during turns and lane changes. The MG90S is widely used in hobby robotics, making replacement parts, mounting hardware, and documentation readily available.
+
   <table>
   <tr>
     <td align="center" width="300" >
@@ -151,33 +152,25 @@ Although Ackerman geometry is more complex to implement, we believe its advantag
 
 Our implementation uses a custom 3D-printed Ackermann steering mechanism, with the following key design considerations:
 We used Onshape to experiment with different pivot points, linkage positions, and steering angles throughout the design process.
-Through multiple iterations, we shortened both rods and increased the length of the side rods to achieve a higher turning radius while keeping the mechanism compact.
+
+Through 2 iterations, we shortened both rods and increased the length of the side rods to achieve a higher turning radius while keeping the mechanism       compact. In our first iteration we made our tabs 2mm longer and the neck of the robot, this gave us a 15 degree increase in our turning radius. We also experimented with shortening the rods to make our wheels streamlined and finalized with 9.53cm for the long shaft and 8.5cm for the short one. 
+  
 A major constraint was the chassis neck, which limited the steering angle because the wheels could collide with it. We therefore cut part of the chassis around the steering area to provide sufficient clearance.
+
 Since achieving perfect Ackermann geometry at our robot's small scale is difficult, we focused on achieving a practical approximation with a wide steering angle, smooth turns, and minimal wheel slip.
+
 The MG90S servo horn and steering angles were adjusted directly in Onshape before 3D printing and physical testing to reduce the risk of overloading the servo or having the wheels contact the chassis.
 
   
-*The compact size and PWM interface make the MG90S easy to integrate and control using the Arduino Nano.
-It provides sufficient torque to steer the front wheels accurately and responsively.
-Its fast response and metal gear construction provide reliable and stable steering during turns and lane changes.
-The MG90S is widely used in hobby robotics, making replacement parts, mounting hardware, and documentation readily available.
-We considered several steering systems, but following our design principle of precision, we decided to implement Ackermann steering geometry to better replicate the controlled turning behavior of real-world vehicles.
-Unlike simpler steering systems, Ackermann geometry allows each front wheel to turn at a different angle during a corner. This reduces tire slippage and improves steering accuracy, resulting in smoother and more controlled turns.
-The fundamental principle of Ackermann geometry involves positioning the steering linkage so that the lines extending from the front wheels intersect at a common point along the rear axle of the robot.*
 
 
 <img src="v-photos/ackerman steering.png" alt="Ackerman Steering">
 
 *This was an early prototype of the Ackerman Steering model before we added it to the first iteration of our Lego car chassis.*
 
-Although this steering geometry is more complex to implement, we believe its advantages are especially important for obstacle navigation and parking, where precise control and a small turning radius are essential. It allows the robot to maneuver smoothly and maintain accurate alignment in tighter spaces.
+*Although this steering geometry is more complex to implement, we believe its advantages are especially important for obstacle navigation and parking, where precise control and a small turning radius are essential. It allows the robot to maneuver smoothly and maintain accurate alignment in tighter spaces. Our implementation uses a custom 3D-printed Ackermann steering mechanism, with the following key design considerations: We used Onshape to experiment with different pivot points, linkage positions, and steering angles throughout the design process. Since achieving perfect Ackermann geometry at the robot's small scale is difficult, we aimed to closely approximate the ideal geometry through multiple design iterations. The MG90S servo horn and steering angles were adjusted directly in Onshape before 3D printing and physical testing.*
+  
 
-Our implementation uses a custom 3D-printed Ackermann steering mechanism, with the following key design considerations:
-* We used Onshape to experiment with different pivot points, linkage positions, and steering angles throughout the design process.
-* Since achieving perfect Ackermann geometry at the robot's small scale is difficult, we aimed to closely approximate the ideal geometry through multiple design iterations.
-* The MG90S servo horn and steering angles were adjusted directly in Onshape before 3D printing and physical testing.
-
-IMAGE OF ACKEERMANN
 
 **Calibration and Implementation:**
 To achieve accurate and consistent steering, we used a combination of CAD adjustments and physical testing:
