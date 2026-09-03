@@ -203,13 +203,19 @@ wnog
 
 **Iteration 1: LEGO**
 
-IMAGE
+<img width="216" height="288" alt="image" src="https://github.com/user-attachments/assets/7ef8f9a2-31b6-4438-8b2a-51e36d70d14d" />
+<img width="216" height="288" alt="image" src="https://github.com/user-attachments/assets/498d1418-7f5b-4504-8630-1bbe256acc12" />
+<img width="216" height="288" alt="image" src="https://github.com/user-attachments/assets/fde05a0b-671a-4879-acd4-6e87f84e8fb9" />
+<img width="216" height="288" alt="image" src="https://github.com/user-attachments/assets/219b3825-5091-4f02-a971-c35816ce2748" />
+
 
 Aspects acheived:
 * A functioning robot capable of performing the game to a certain degree of efficiency.
+* Experiment with a new camera angle.                                     
 
 Drawbacks:
 * Tall and bulky design paired with a narrow body produced a high center of gravity and minimal support, making the robot unstable on quick turns and slower on straights.
+* The low camera angle caused loss of depth perception, we we decided to completely reengineer it. 
 * LEGO Technic design limited freedom of customizability, forcing any 3D printed parts to align to a LEGO frame.
 * Limited range of movement for LEGO Ackermann steering system, constraining turns to 40 degrees to either side.
 * Terrible tolerances (byproduct of using LEGO) result in constant plastic grinding in rear drive system.
