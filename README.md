@@ -15,7 +15,7 @@ This repository contains engineering materials of a self-driven vehicle's model 
 
 ## Introduction
 
-We are the Sub-Atomica, Niva, Jeevesh and Shadya. We are united by a passion for STEM, Electronics, coding and jalapeño poppers. We wanted to bring our jouney to many others with the same passions and inspire teenagers around the world. To us its more than just coding or building, its the experiences and connections along the way.
+We are Team Sub-Atomica, Niva, Jeevesh and Shadya. We are united by a passion for STEM, Electronics, coding and jalapeño poppers. We wanted to bring our jouney to many others with the same passions and inspire teenagers around the world. To us its more than just coding or building, its the experiences and connections along the way.
 
 ## Robot 
 
@@ -44,6 +44,13 @@ Our team also wanted the car to be stable and fast (and colorful if we can help 
 
 # 1. Mobility Management
 
+To build a self-driving car we need to build a car.
+
+Objectives:
+
+As per the rules, the car must have a steering mechanism and the rear axle driven by a motor.
+Our team also wanted the car to be stable and fast (and colorful if we can help it).
+
 ## 1.1 Drive System
 **Drive Motor:** JGA25-371 DC Motor with _____ encoder. MUST CALCULATE TORQUE (TO-DO)
   <table>
@@ -63,16 +70,25 @@ Our team also wanted the car to be stable and fast (and colorful if we can help 
     </td>
   </tr>
   </table>
+
+ **Selection Reasoning** 
+*It is compact and lightweight, allowing us to fit it into our robot easily.
+Built-in encoder, allowing for precise movement and less wiring hassle.
+High torque for pushing the robot with vigor and avoiding stalling.
+The JGA25-371 motor was selected because it combines high torque with integrated encoder feedback, providing both the power and precision required for the WRO Future Engineers competition. The motor drives the rear wheels through a metal WLTOYS 144001 differential, which allows the robot to maintain smooth and balanced turns while reducing the difference in rotational speed between the left and right wheels. By distributing torque between both LEGO SPIKE Prime wheels, the differential minimizes wheel slip and improves stability during cornering. The integrated Hall encoder provides real-time feedback for closed-loop control, allowing the robot to accurately measure wheel rotation, regulate speed, and maintain consistent movement throughout each run. Unlike smaller motors, the JGA25-371 provides sufficient torque to support the drivetrain while maintaining reliable performance under varying loads. The combination of encoder feedback, the metal differential, and the SPIKE Prime wheels creates a drivetrain that balances power, stability, and precision, making it well-suited for the competition environment.*
+
   
   **Selection Reasoning:**
-  + It is compact and lightweight, allowing us to fit it into our robot easily.
-  + Built-in encoder, allowing for precise movement and less wiring hassle.
-  + High torque for pushing the robot with vigor and avoiding stalling.
+  The JGA25-371 was selected for its high torque, compact size, reliability, and integrated Hall-effect encoder. Its torque provides sufficient force under varying loads while reducing the likelihood of stalling, and the encoder provides rotational feedback for precise movement. Compared with smaller motors, it adds some weight and increases the possibility of wheel slip, but we accepted this tradeoff because torque and controllability were more important to our drivetrain requirements.
 
-  The JGA25-371 motor was selected because it combines high torque with integrated encoder feedback, providing both the power and precision required for the WRO   Future Engineers competition. The motor drives the rear wheels through a metal WLTOYS 144001 differential, which allows the robot to maintain smooth and balanced turns while reducing the difference in rotational speed between the left and right wheels. By distributing torque between both LEGO SPIKE Prime wheels, the differential minimizes wheel slip and improves stability during cornering. The integrated Hall encoder provides real-time feedback for closed-loop control, allowing the robot to accurately measure wheel rotation, regulate speed, and maintain consistent movement throughout each run. Unlike smaller motors, the JGA25-371 provides sufficient torque to support the drivetrain while maintaining reliable performance under varying loads. The combination of encoder feedback, the metal differential, and the SPIKE Prime wheels creates a drivetrain that balances power, stability, and precision, making it well-suited for the competition environment.
+The motor drives the rear wheels through a metal WLTOYS 144001 differential, which distributes torque while allowing the left and right LEGO SPIKE Prime wheels to rotate at different speeds during turns. This reduces drivetrain binding and tire scrub while providing a durable connection capable of handling the motor's torque. The motor, differential, and wheels were therefore selected as one system to balance power, traction, and turning consistency.
 
-  **Differential:**
-  We used a metal WLTOYS 144001 differential in our robot, which allows the left and right rear wheels to rotate at different speeds while turning, reducing tire drag and improving turning efficiency. This setup provides smoother and more controlled cornering by distributing torque between both rear wheels and compensating for the difference in the distance each wheel travels during a turn. The differential improves maneuverability and stability, particularly during the obstacle challenge and parallel parking, where precise and repeatable movements are essential.
+The encoder is integrated into the vehicle's closed-loop control system through the Arduino Nano and motor driver. It measures wheel rotation so the controller can regulate speed and distance, improving repeatability between runs and allowing the system to respond to changes in load. To manage risks such as wheel slip, mechanical backlash, and motor stress, motor acceleration and speed are controlled in software and the drivetrain is calibrated using encoder feedback. This integration allows the mechanical and software systems to work together to produce controlled and repeatable motion.
+
+  **Differential**
+*We used a metal WLTOYS 144001 differential in our robot, which allows the left and right rear wheels to rotate at different speeds while turning, reducing tire drag and improving turning efficiency. This setup provides smoother and more controlled cornering by distributing torque between both rear wheels and compensating for the difference in the distance each wheel travels during a turn. The differential improves maneuverability and stability, particularly during the obstacle challenge and parallel parking, where precise and repeatable movements are essential.*
+
+We used a metal WLTOYS 144001 differential in our robot, allowing the left and right rear wheels to rotate at different speeds during turns, reducing tire scrub and improving turning efficiency. This provides smoother cornering by distributing torque between both wheels and compensating for the different distances they travel. The differential improves maneuverability and stability during the Obstacle Challenge and parallel parking, where precise and repeatable movement is essential, while its metal construction provides durability under drivetrain loads.
   
   <table>
   <tr>
@@ -93,17 +109,25 @@ Our team also wanted the car to be stable and fast (and colorful if we can help 
   </table>
 
   **Mounting:**
-  gseiohgsr
+
+  * Installed using an inset groove system in the chassis screwed to a detachable 3D-printed motor differential housing clamp that is placed above the differential gear compartment. This will allow for future changes to accommodate different motors and gears if the need arise.
+
+  IMAGE
+
+  * Wires connected to Arduino Nano and Motor Driver.
+  * Spike Prime wheels fitted onto the LEGO motor axle.
+
 
   **Considerations:**
-  fwesng
+  An alternative would be a NEMA 17 stepper motor, which can provide precise speed and position control. However, the NEMA 17 is larger and heavier, and would require a more complex driver setup, making it less suitable for our robot. The JGA25-371 was chosen instead because it provides sufficient speed and torque while being more compact and easier to integrate.
   
 ## 1.2 Steering System
 
 **Steering:** Initially Parallel Steering, then changed to Ackermann Steering Geometry, prototyped with LEGO technic parts and later made with 3D printed parts.
   insert images of prototypes
 
-**Steering Motor:** MG90S Micro Servo for precise steering and weight reduction.
+**Steering Motor:** We chose the MG90S Micro Servo for precise steering and weight reduction. The compact size and PWM interface make the MG90S easy to integrate and control using the Arduino Nano. It provides sufficient torque to steer the front wheels accurately and responsively. Its fast response and metal gear construction provide reliable and stable steering during turns and lane changes. The MG90S is widely used in hobby robotics, making replacement parts, mounting hardware, and documentation readily available.
+
   <table>
   <tr>
     <td align="center" width="300" >
@@ -122,30 +146,31 @@ Our team also wanted the car to be stable and fast (and colorful if we can help 
   </tr>
   </table>
 
-**Selection Reasoning:**
-* The compact size and PWM interface make the MG90S easy to integrate and control using the Arduino Nano.
-* It provides sufficient torque to steer the front wheels accurately and responsively.
-* Its fast response and metal gear construction provide reliable and stable steering during turns and lane changes.
-* The MG90S is widely used in hobby robotics, making replacement parts, mounting hardware, and documentation readily available.
+  **Selection Reasoning:**
 
-We considered several steering systems, but following our design principle of precision, we decided to implement Ackermann steering geometry to better replicate the controlled turning behavior of real-world vehicles.
+Although Ackerman geometry is more complex to implement, we believe its advantages are especially important for obstacle navigation and parking, where precise control and a small turning radius are essential. We also considered parallel steering because it was simpler to implement, but chose Ackermann as a calculated risk for its improved maneuverability.
 
-Unlike simpler steering systems, Ackermann geometry allows each front wheel to turn at a different angle during a corner. This reduces tire slippage and improves steering accuracy, resulting in smoother and more controlled turns.
+Our implementation uses a custom 3D-printed Ackermann steering mechanism, with the following key design considerations:
+We used Onshape to experiment with different pivot points, linkage positions, and steering angles throughout the design process.
 
-The fundamental principle of Ackermann geometry involves positioning the steering linkage so that the lines extending from the front wheels intersect at a common point along the rear axle of the robot.
+Through 2 iterations, we shortened both rods and increased the length of the side rods to achieve a higher turning radius while keeping the mechanism       compact. In our first iteration we made our tabs 2mm longer and the neck of the robot, this gave us a 15 degree increase in our turning radius. We also experimented with shortening the rods to make our wheels streamlined and finalized with 9.53cm for the long shaft and 8.5cm for the short one. 
+  
+A major constraint was the chassis neck, which limited the steering angle because the wheels could collide with it. We therefore cut part of the chassis around the steering area to provide sufficient clearance.
+
+Since achieving perfect Ackermann geometry at our robot's small scale is difficult, we focused on achieving a practical approximation with a wide steering angle, smooth turns, and minimal wheel slip.
+
+The MG90S servo horn and steering angles were adjusted directly in Onshape before 3D printing and physical testing to reduce the risk of overloading the servo or having the wheels contact the chassis.
+
+  
+
 
 <img src="v-photos/ackerman steering.png" alt="Ackerman Steering">
 
 *This was an early prototype of the Ackerman Steering model before we added it to the first iteration of our Lego car chassis.*
 
-Although this steering geometry is more complex to implement, we believe its advantages are especially important for obstacle navigation and parking, where precise control and a small turning radius are essential. It allows the robot to maneuver smoothly and maintain accurate alignment in tighter spaces.
+*Although this steering geometry is more complex to implement, we believe its advantages are especially important for obstacle navigation and parking, where precise control and a small turning radius are essential. It allows the robot to maneuver smoothly and maintain accurate alignment in tighter spaces. Our implementation uses a custom 3D-printed Ackermann steering mechanism, with the following key design considerations: We used Onshape to experiment with different pivot points, linkage positions, and steering angles throughout the design process. Since achieving perfect Ackermann geometry at the robot's small scale is difficult, we aimed to closely approximate the ideal geometry through multiple design iterations. The MG90S servo horn and steering angles were adjusted directly in Onshape before 3D printing and physical testing.*
+  
 
-Our implementation uses a custom 3D-printed Ackermann steering mechanism, with the following key design considerations:
-* We used Onshape to experiment with different pivot points, linkage positions, and steering angles throughout the design process.
-* Since achieving perfect Ackermann geometry at the robot's small scale is difficult, we aimed to closely approximate the ideal geometry through multiple design iterations.
-* The MG90S servo horn and steering angles were adjusted directly in Onshape before 3D printing and physical testing.
-
-IMAGE OF ACKEERMANN
 
 **Calibration and Implementation:**
 To achieve accurate and consistent steering, we used a combination of CAD adjustments and physical testing:
@@ -155,11 +180,13 @@ To achieve accurate and consistent steering, we used a combination of CAD adjust
 * The final Onshape design was then used to produce the 3D-printed steering assembly.
 
 **Mounting:**
-abfaegneog
+
+* Screwed into a platform plate in front of the chassis, connected to the steering mechanism.
+
 image
 
 **Considerations:**
-While the MG90S is suitable for our current steering system, we considered upgrading to the MG996R because it offers significantly higher torque and a more durable metal gear system. The increased torque would allow the servo to handle greater resistance from the steering mechanism and front wheels, providing more consistent steering and reducing the possibility of the servo struggling or losing its position during sharper turns. Its stronger construction would also make it more reliable under repeated use and during rapid steering adjustments or uneven surfaces. Although the MG996R is larger and requires more power than the MG90S, these disadvantages could be managed by modifying the chassis and power system. Overall, the MG996R would provide a stronger and more robust steering system, making it a potential upgrade if additional steering torque and durability are needed.
+An alternative would be the MG996R servo, which provides higher torque and more durable metal gears. However, it is larger and requires more power than the MG90S, which would require modifications to our chassis and power system. The MG90S was chosen instead because it is more compact and sufficient for our steering system.
 
 ## 1.3 Chassis Design
 
@@ -319,20 +346,19 @@ OLD MOTOR DRIVER IMAGE: DRV8871
 
   **Selection Reasoning:** 
 
-  * 160° wide field of view from the wide-angle lens captures a larger area, improving the robot’s ability to detect and track its surroundings.
-  * 5MP resolution provides clear and detailed images for vision-based tasks.
-  * 1080p video at 30 FPS provides smooth real-time footage for image processing and object detection.
-  * Compact and lightweight design allows the camera to be easily mounted on the robot without adding significant weight.
+160° wide field of view captures more of the course, reducing blind spots and improving environmental awareness.
+5MP resolution provides enough detail to reliably distinguish course features and colored markers.
+1080p at 30 FPS provides responsive visual data for real-time image processing and object detection.
+Compact and lightweight design reduces its impact on vehicle weight and balance while allowing flexible mounting.
 
-  This setup provides a 160° wide-angle view, improving the robot’s environmental awareness during both the Open Challenge and Obstacle Challenge. The camera captures course elements such as walls, pillars, colored markers, parking spaces, and lane lines, providing visual information for navigation and decision-making.
+This setup provides a 160° wide-angle view that increases the robot's visual coverage during both the Open Challenge and Obstacle Challenge. The camera supplies visual information about walls, pillars, colored markers, parking spaces, and lane lines, which is combined with other sensor data to support navigation and decision-making. The main tradeoff is balancing wider coverage with image processing requirements, so the selected resolution and frame rate provide sufficient detail and responsiveness without unnecessarily increasing processing demands.
 
-  **The camera is mainly used for the following tasks:**
+The camera is mainly used for the following tasks:
 
-  * Detect and determine wall positions.
-  * Identify pillar colors and types.
-  * Recognize parking zones.
-  * Track path lines and boundaries.
-
+- Detect and determine wall positions.
+- Identify pillar colors and types.
+- Recognize parking zones.
+- Track path lines and boundaries.
 
    **BNO055 Inertial Measurement Unit (IMU):** 
 
@@ -384,9 +410,18 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
   </tr>
   </table>
 
-  * The Raspberry Pi 5 acts as the robot’s primary processing unit, handling high-level decision-making, image processing, and the integration of sensor data.
-  * Equipped with a quad-core Arm Cortex-A76 CPU and 8GB of RAM, it is capable of processing real-time camera data for applications such as mapping, obstacle detection, and path planning.
-  * Its compact design also allows it to be easily mounted onto the chassis without adding significant weight.
+  *Subsystem Integration:*
+  The Raspberry Pi 5 acts as the robot’s primary processing unit, handling high-level decision-making, image processing, and sensor-data integration. Its processing capability allows it to run real-time vision, mapping, obstacle detection, and path-planning tasks while communicating with the Arduino Nano for low-level control.
+
+  *Hardware and Software Architecture:*
+  The Raspberry Pi 5’s quad-core Arm Cortex-A76 CPU and 8GB of RAM provide sufficient processing performance for the computational demands of the robot. Its compact form factor also allows it to be mounted directly onto the chassis without significantly increasing the vehicle’s size or weight. It communicates with the Arduino Nano through a serial connection, creating a modular architecture where high-level processing and low-level control are separated.
+
+  *Iterations and Trade-Offs:*
+  We initially tested a Raspberry Pi 4 to reduce power consumption, but testing showed that its lower processing performance caused slower image processing and reduced responsiveness during real-time vision and navigation tasks. We therefore changed to the Raspberry Pi 5, accepting higher power consumption in exchange for significantly improved processing performance and more reliable real-time operation.
+
+  *Risk Analysis and Reliability:*
+  Using the Raspberry Pi 5 reduces the risk of processing bottlenecks affecting navigation and vision performance. Separating high-level processing from the Arduino Nano’s low-level control also prevents computationally intensive tasks from directly interfering with motor and steering control, improving overall system reliability.
+  
 
   **Microcontroller:** Arduino Nano
 
@@ -409,9 +444,24 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
   </tr>
   </table>
 
-  * The Arduino Nano acts as the robot’s low-level controller, managing tasks such as motor control, steering, and sensor input.
-  * It communicates with the Raspberry Pi 5 through a serial connection, separating high-level processing from precise hardware control.
-  * Its fast and reliable response allows for accurate control of the robot’s motors and steering system, resulting in smoother and more consistent movement.
+  *Subsystem Integration:*
+
+  The Arduino Nano was selected as the robot’s low-level controller to handle time-sensitive tasks such as motor control, steering, and encoder/sensor input. This architecture separates high-level decision-making from low-level control, allowing the Raspberry Pi 5 to focus on vision processing, navigation, and path planning while the Arduino maintains consistent motor and steering responses.
+
+  *Hardware and Software Architechture:*
+
+  The Arduino Nano communicates with the Raspberry Pi 5 through a serial connection, creating a modular hardware and software architecture. This reduced the risk of timing conflicts caused by running motor-control tasks alongside computationally intensive processes on the Raspberry Pi. It also allows each subsystem to be tested independently, making troubleshooting and future modifications easier.
+
+  *Iterations and Trade-Offs:*
+
+  Our initial design used a microbit, but research showed that the Arduino Nano offered greater flexibility for external hardware and simpler bidirectional communication with the Raspberry Pi 5. We therefore changed to the Arduino Nano, trading the microbit’s built-in buttons and LEDs for improved subsystem integration and expandability.
+
+  The control system was then iteratively tested and adjusted to improve motor response, steering accuracy, and communication reliability. Using a dedicated microcontroller introduced additional hardware and communication complexity, but provided more predictable real-time control and reduced the dependence of critical drivetrain functions on the Raspberry Pi’s processing workload.
+
+  *Risk Analysis and Reliability:*
+
+  This subsystem architecture improves reliability by isolating critical low-level control from higher-level software. If the vision or navigation software requires significant processing, the Arduino can continue executing motor and steering commands without relying on continuous high-level computation. This separation therefore supports more consistent movement and provides a more robust architecture for the challenges defined by WRO Future Engineers.
+  
 
   **Expansion Board:** Arduino Nano Shield
 
@@ -440,7 +490,7 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
 
   **Wiring Diagram:**
 
-  IMAGE OF DIAGRAM
+  <img width="1227" height="1776" alt="Wiring Diagram (1)" src="https://github.com/user-attachments/assets/c651a311-7e89-4874-8038-a7da87a27d80" />
 
   ## 2.5 Power Consumption
 
@@ -458,25 +508,10 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
   
 
 
-+ **Torque Calculations:**
-  [insert torque calculation image]
-
-+ **3D Printed Structure:** Base layer design with a plate that holds the raspberry pi and a mounting plate that holds the step down voltage converter and Arduino Nano.
-  [insert cross-sections and isometric and face images of robot]
-
-+ **Custom Mounts:** Mounts and holders for servo, camera, raspberry pi, and a joint mount for step down voltage converter and Arduino Nano. Custom Motor-Differential, Servo-Axle, and Differential-Axle coupling.
-  [pictures and link]
-
-+ **Wheels:** Spike Prime wheels (56mm diameter, 14mm thick) for compactness and grip.
-  [link to explanation]
-
-+ **Iterations:** As you can see in the following image, this was an iterative project with many versions of each part.
-  [insert image of all iterations]
-
-
 ###  Power System Architecture
 
-<img src="v-photos/Screenshot 2026-08-10 193454.png" alt="Ackerman Steering">
+<img width="1167" height="607" alt="image" src="https://github.com/user-attachments/assets/c2637fd0-5c40-4e5f-b6e0-8fb43fe7991f" />
+
 
 # 3. Software Architecture
 
@@ -484,18 +519,82 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
 
 # 5. List of Components
 
-| Item | Product Name | Description | Manufacturer | Quantity | Source/Supplier | Usage | Total Cost |
-|------------|------------|-----------|----------------|------------|------------|------------|------------|
-| 1 | pn | Raspberry Pi 5 | manufacturer | 1 | source | usage | cost |
-| 2 | pn | Arduino Nano | manufacturer | 1 | source | usage | cost |
-| 3 | pn | Arduino Nano Shield | manufacturer | 1 | source | usage | cost |
-| 4 | pn | L298N Motor Driver | manufacturer | 1 | source | usage | cost |
-| 5 | pn | MG90S Servo | manufacturer | 1 | source | usage | cost |
-| 6 | pn | WLTOYS 144001 Differential | manufacturer | 1 | source | usage | cost |
-| 7 | pn | JGA25-371 Motor w/ Encoder | manufacturer | 1 | source | usage | cost |
-| 8 | pn | SainSmart Wide-Angle Camera | manufacturer | 1 | source | usage | cost |
-| 9 | pn | BNO055 IMU | manufacturer | 1 | source | usage | cost |
-| 10 | pn | Step-Down Voltage Converter | manufacturer | 1 | source | usage | cost |
+| Major components                                                 | Reference Cost in CAD<br>\- As of Sep 1, 2026<br>\- Taxes not included | Purchase Link for Future Reference                                                            |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Raspberry Pi 5 4GB                                               | $153.95                                                                | [pishop.ca](https://www.pishop.ca/product/raspberry-pi-5-4gb)                                 |
+| Arduino Nano                                                     | $27.19                                                                 | [Amazon.ca](https://www.amazon.ca/dp/B0F6Y7GS4Q)                                              |
+| Arduino Nano Expansion Board                                     | $13.99                                                                 | [Amazon.ca](https://www.amazon.ca/dp/B08198MSJ2)                                              |
+| 1.3" OLED display module SH1106 128x64                           | $5.33                                                                  | [aliexpress.com](https://www.aliexpress.com/item/1005006827988792.html)                       |
+| Sainsmart Wideangle 5MP Camera 160 degree FoV (OV5647 sensor)    | $12.91                                                                 | [Amazon.ca](https://www.amazon.ca/SainSmart-Fish-Eye-Camera-Raspberry-Arduino/dp/B00N1YJKFS)  |
+| Adafruit 9-DOF Absolute Orientation IMU Fusion Breakout - BNO055 | $38.38                                                                 | [Aliexpress.com](https://www.aliexpress.com/item/1005010734176030.html)                       |
+| VL53L0X TOF sensor                                               | $13.99                                                                 | [Amazon.ca](https://www.amazon.ca/dp/B0F1MRW55R)                                              |
+| 12V Battery                                                      | $27.99                                                                 | [Amazon.ca](https://www.amazon.ca/12V-2800mAh-Rechargeable-Battery-Replacement/dp/B0FJ27ZT28) |
+| 12V to 5V Step-down converter (XL4015 with Display)              | $4.80                                                                  | [aliexpress.com](https://www.aliexpress.com/item/1005008401247033.html)                       |
+| JGA25-371 620 rpm 12V Brushless DC motor with Encoder            | $12.78                                                                 | [aliexpress.com](https://www.aliexpress.com/item/1005007546764319.html)                       |
+| WItoys 144010 Metal Differential Gearbox                         | $40.58                                                                 | [aliexpress.com](https://www.aliexpress.com/item/1005005869550963.html)                       |
+| L298N Motor Driver                                               | $11.99                                                                 | [Amazon.ca](https://www.amazon.ca/dp/B0D8G2PZBB)                                              |
+| MG90S Servo motors                                               | $17.02                                                                 | [Amazon.ca](https://www.amazon.ca/dp/B0BWJ4RKGV)                                              |
+| Short USB to USB-C cable                                         | $11.39                                                                 | [Amazon.ca](https://www.amazon.ca/dp/B0DG8J6S1G)                                              |
+| Rocker Switch                                                    | $2.65                                                                  | [aliexpress.com](https://www.aliexpress.com/item/1005007044175800.html)                       |
+| Push Button breakout module                                      | $1.52                                                                  | [aliexpress.com](https://www.aliexpress.com/item/32820437436.html)                            |
+| RGB LED SMD Module                                               | $2.03                                                                  | [aliexpress.com](https://www.aliexpress.com/item/1005006764822374.html)                       |
+| Lego wheels, axles and connectors                                | $50.00                                                                 | Approximately                                                                                 |
+| 3D printed parts for the chassis                                 | $25.00                                                                 | Approximately for one spool of PLA filament                                                   |
+| Total                                                            | $473.49                                                                |                                                                                               |
+
+# 7. 3D Model Files
+
+## 7.1 Onshape CAD Files
+
+We used Onshape to design the 3D models used to make the robot. The files can be found here (hyperlink).
+
+* Assembly Files (hyperlink) - contains the full robot assembly including the part placements.
+* Individual Parts (hyperlink) - includes each 3D component separately.
+
+## 7.2 STL Files
+
+**Chassis and Core Structure**
+
+* Main chassis (link)
+
+**Steering Linkages**
+
+* Ackermann Steering Long Rod (link)
+* Ackermann Steering Short Rod (link)
+* Ackermann Steering Left Tab (link)
+* Ackermann Steering Right Tab (link)
+* Ackermann Steering Hexagonal Rod (link)
+
+**Motor and Transmission**
+
+* Differential Housing (link)
+
+**Wheel and Axle Components**
+
+* Axle Spacer (link)
+
+**Mounting Components**
+
+* Camera and Servo Mount (link)
+* Middle Mount Plate (link)
+* Raspberry Pi Mount Plate (link)
+* Servo Box Mount (link)
+
+**Coupling Parts**
+
+* Motor-Differential Coupling (link)
+* Differential-Axle Coupling (link)
+
+**Miscellaneous**
+
+* Guide Arrow (link)
+
+## 7.3 Slicer Files
+
+All slicer project files (.3mf) used for printing the robot’s components can be found here.
+These files contain optimized slicing settings such as layer height, infill, support, and print orientation for each part.
+
+bjsihgiwobwe
 
 
-
+# 8. Building Instructions
