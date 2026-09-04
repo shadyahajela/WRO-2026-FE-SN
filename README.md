@@ -72,11 +72,13 @@ Our team also wanted the car to be stable and fast (and colorful if we can help 
   </table>
 
  **Selection Reasoning** 
-*It is compact and lightweight, allowing us to fit it into our robot easily.
+
 Built-in encoder, allowing for precise movement and less wiring hassle.
 High torque for pushing the robot with vigor and avoiding stalling.
 The JGA25-371 motor was selected because it combines high torque with integrated encoder feedback, providing both the power and precision required for the WRO Future Engineers competition. The motor drives the rear wheels through a metal WLTOYS 144001 differential, which allows the robot to maintain smooth and balanced turns while reducing the difference in rotational speed between the left and right wheels. By distributing torque between both LEGO SPIKE Prime wheels, the differential minimizes wheel slip and improves stability during cornering. The integrated Hall encoder provides real-time feedback for closed-loop control, allowing the robot to accurately measure wheel rotation, regulate speed, and maintain consistent movement throughout each run. Unlike smaller motors, the JGA25-371 provides sufficient torque to support the drivetrain while maintaining reliable performance under varying loads. The combination of encoder feedback, the metal differential, and the SPIKE Prime wheels creates a drivetrain that balances power, stability, and precision, making it well-suited for the competition environment.*
+<br/>
 
+***<Naga - Above is good enough. Perhaps convert to jot notes to clearly indicate the reasons it was selected. Primarily because the 620RPM would allow for quick laps around the circuit at full speed (fastest lap was 16 seconds) and the 0.22kg.cm torque allows to move our 800gm robot slow enough to achieve parking.The integrated Hall encoder provides real-time feedback for closed-loop control, allowing the robot to accurately measure wheel rotation, regulate speed, and maintain consistent movement especially during parking>***
   
   **Selection Reasoning:**
   The JGA25-371 was selected for its high torque, compact size, reliability, and integrated Hall-effect encoder. Its torque provides sufficient force under varying loads while reducing the likelihood of stalling, and the encoder provides rotational feedback for precise movement. Compared with smaller motors, it adds some weight and increases the possibility of wheel slip, but we accepted this tradeoff because torque and controllability were more important to our drivetrain requirements.
