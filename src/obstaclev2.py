@@ -13,121 +13,160 @@ from frames import Frame #define your color ranges and other frame-related funct
 from picamera2 import Picamera2
 import cv2
 
-#COLOR VALUES# H - /2, S - x 2.55, V - x 2.55
+DRAW = True   # set False for headless runs (e.g. via the button/systemd service) - skips cv2.imshow/waitKey so no display is needed
 
-#RED COLOR VALUES (from obstacle_FAKE.py)
+# H = / 2, S = * 2.55, V = * 2.55
+
+#RED BLOCK COLOR VALUES 
 # Red wraps around hue 0/180, so two ranges are combined
 lowRed1  = np.array([0, 128, 80])
 highRed1 = np.array([5, 255, 255])
 lowRed2  = np.array([170, 128, 80])
 highRed2 = np.array([180, 255, 255])
 
-#GREEN COLOR VALUES (from obstacle_challenge.py)
+#   q1BLOCK COLOR VALUES
 lowGreen  = np.array([40, 70, 50])
 highGreen = np.array([85, 255, 255])
 
-#BLACK WALL COLOR VALUES (from obstacle_challenge.py)
+#BLACK WALL COLOR VALUES
 lowBlack  = np.array([0, 0, 0])
-highBlack = np.array([180, 255, 70])
+highBlack = np.array([180, 255, 80])
 
-#MAGENTA WALL COLOR VALUES (from obstacle_challenge.py) - counts as wall in wall_frame/corner boxes, except during BETWEEN
+#MAGENTA WALL COLOR VALUES - counts as wall in wall_frame/corner boxes, except during BETWEEN
 lowMagenta  = np.array([155, 100, 80])
 highMagenta = np.array([168, 255, 255])
 
-#LAP LINE COLOR VALUES (from obstacle_challenge.py)
+#LAP LINE COLOR VALUES
 lowBlue  = np.array([100, 80, 60])
 highBlue = np.array([140, 255, 255])
 
 lowOrange  = np.array([6, 100, 75])
 highOrange = np.array([35, 255, 255])
 
-#MICROBIT VALUES
-center = 100 # base steering value, PID correction is added/subtracted from this
+DEFAULT_SPEED = 130
+
+#Vehicle mobility control values - send to Arduino
+center = 105 # base steering value, PID correction is added/subtracted from this (synced with open_alex.py)
 steering_value = 100 # Calculated steering value to add or subtract from center value
 prev_steer = steering_value
-margin = 55
-speed_value = 135 # Speed, 160/135 is lowest, 255 is highest
-on = 1
+steering_margin = 55
+speed_value = DEFAULT_SPEED # Speed, 160/135 is lowest, 255 is highest it wa 135
+on = 1 # motor direction control: 0 - off, 1 - forward, 2 - reverse
 
-lines = 0
-
-#PID VALUES
-kp = 0.085
-kd = 0.2
-ky = 1.0  # tune how aggressively distance affects steering: >1 = harsher falloff (goes light faster with distance), <1 = gentler falloff
-previous_error = 0
-previous_error_green = 0
+#OBSTACLE AVOIDANCE VALUES - absolute-an gle steering (ported from WRO-FE-XX's
+#find_obstacle_angle_and_draw_lines/calculate_servo_angle_from_obstacle), replacing the old
+#corner-position PID which steered off pixel error instead of a real angle
+LEFT_OBSTACLE_X_THRESHOLD = 0          # reference point (bottom-left) a red obstacle is steered around
+RIGHT_OBSTACLE_X_THRESHOLD = 640   # reference point (bottom-right) a green obstacle is steered around
+OBJECT_LINE_ANGLE_THRESHOLD = 45        # 45 degrees - may need on-field retuning since this camera feed isn't warped to a bird's-eye view like WRO-FE-XX's
+OBSTACLE_KP = 1.5
+old_obstacle_angle = None      # last computed obstacle angle - reused when the obstacle gets too close to measure reliably
+old_obstacle_is_green = None
 
 #WALL FOLLOWING VALUES (used only when no red/green obstacle is visible)
 wfx1, wfy1, wfx2, wfy2 = 0, 220, 640, 260   # small band - mirrors obstacle_challenge.py's no-obstacle default
 wf_gap_half_width = 100   # tune this - each gap edge sits this many pixels out from wall_frame's own center (recomputed in wall_follow() off wfx1)
 between_left_wall_offset = 150   # tune - artificial left wall = wall_frame.x1 + this, forced during BETWEEN
-kp_wall = 0.3
-kd_wall = 0.22
+wall_offset_cw = 1    # tune - CW hugs the right wall, so left_x is faked at wall_frame.x1 + this (ported from open_alex.py) - was 0, which pinned left_x to a hardcoded 0 and ignored real detection entirely
+wall_offset_ccw = 1   # tune - CCW hugs the left wall, so right_x is faked at wall_frame.x2 - this (ported from open_alex.py) - was 0, same issue mirrored on the right
+kp_wall = 0.3   # ported from open_alex.py's field-tuned value (was 0.3) - also affects BETWEEN, which shares this function
+kd_wall = 0.25   # ported from open_alex.py's field-tuned value (was 0.22)
 dead_zone_px = 20
-previous_error_wall = 0
+previous_error_wall = None   # None sentinel (was 0) - avoids a derivative-kick spike on the first frame after a turn resets it
 
 #CORNER BLACK-DETECTION FRAMES (small boxes stepping diagonally in from each top corner of black_frame)
-tr1_x1, tr1_y1, tr1_x2, tr1_y2 = 560, 400, 600, 440   # top-right, outer
-tr2_x1, tr2_y1, tr2_x2, tr2_y2 = 600, 360, 640, 400   # top-right, stepped in/down
+tr1_x1, tr1_y1, tr1_x2, tr1_y2 = 470, 330, 490, 350   # top-right, outer
+tr2_x1, tr2_y1, tr2_x2, tr2_y2 = 490, 310, 510, 330   # top-right, stepped in/down - moved 100px in from the right edge total, no longer touching it
 
-tl1_x1, tl1_y1, tl1_x2, tl1_y2 = 40, 400, 80, 440      # top-left, outer (mirror of tr1)
-tl2_x1, tl2_y1, tl2_x2, tl2_y2 = 0, 360, 40, 400    # top-left, stepped in/down (mirror of tr2)
-CORNER_FULL_PX = 1550   # each corner box is 40x40=1600px - tune on field for how "full" of black counts as a solid wall
+tl1_x1, tl1_y1, tl1_x2, tl1_y2 = 150, 330, 170, 350      # top-left, outer (mirror of tr1)
+tl2_x1, tl2_y1, tl2_x2, tl2_y2 = 130, 310, 150, 330    # top-left, stepped in/down (mirror of tr2) - moved 100px in from the left edge total, no longer touching it
+CORNER_FULL_PX = 300   # each corner box is 20x20=400px (scaled down from 1550/1600 when boxes were 40x40) - tune on field for how "full" of black counts as a solid wall
+
+#FRONT-CENTER BLACK-DETECTION FRAME - 100x100, centered on the 640x480 feed. Only checked once
+#line_detected is True (a lap line has been seen, waiting on turn_delay before entering TURNING);
+#if it fills with black, the front wall is right there, so nudge steering toward the upcoming
+#turn's direction (CCW turns left, CW turns right) to help it start rotating a beat earlier
+FRONT_CENTER_X1, FRONT_CENTER_Y1, FRONT_CENTER_X2, FRONT_CENTER_Y2 = 295, 195, 345, 245
+FRONT_CENTER_FULL_PX = 2250   # 50x50=2500px - tune on field for how "full" counts as solid wall
+FRONT_CENTER_STEER_NUDGE = 40
+
+CRITICAL_TURN = False
+CRITICAL_TURN_TIME = 3.0   # seconds the front-center-box check stays active once CRITICAL_TURN is triggered - tune on field
+CRITICAL_TURN_START = None
 
 #PARK TRIGGER BOX (BETWEEN+CCW only) - 50x50 in the bottom-right corner, watching for the magenta parking wall
 park_box_x1, park_box_y1, park_box_x2, park_box_y2 = 590, 260, 640, 310
 PARK_BOX_MAGENTA_PX = 1000   # tune on field
 
-#LAP COUNTING / DIRECTION VALUES (from obstacle_challenge.py)
+#LAP COUNTING / DIRECTION VALUES
 CW = 0
-CCW = 1
+CCW = 0
 orangeLine = 0
-blueLine = 11
+blueLine = 0 # SHADYA - Why is this 11?
 line_detected = False
+side_wall_missing = False   # set in STRAIGHT each frame - True when the hugged-side wall drops out of camera view (ported from open_challenge.py)
 start_time_line = time.time()
+prev_frame_time = time.time()   # for FPS calculation
 
-#TURNING VALUES (from obstacle_challenge.py, without its special-case colored-block handling)
-OBSTACLE_TURN = 200        # contour-area threshold for "obstacle seen" while turning
-turn_delay = 0.4           # seconds to wait after a lap line is seen before actually turning
-turn_execution_time = 0.4  # seconds to hold the turn before handing back to normal driving
+LINES_STOP_DELAY = 2.0   # seconds to keep driving once lines reaches 12, before forcing a stop
+lines_stop_time = None   # set once, the first frame lines >= 12
+
+#TURNING VALUES (without its special-case colored-block handling)
+BLOCK_MIN_PIXELS = 650       # contour-area threshold for "obstacle seen" while turning
+turn_delay = 0.1           # seconds to wait after a lap line is seen before actually turning
 turn_delay_time = None
-turning_start_time = 0
 
 turn_count = 0
 start_time_turn_count = time.time()   # debounce for turn_count, same 1.5s pattern as orangeLine/blueLine's start_time_line
 
-#LEAVE PARKING VALUES (from obstacle_challenge.py - only its "phase 1" drive-straight-out is implemented there)
+#IMU heading-based turning values (ported from open_alex.py's PD turn control) - one shared
+#kp_turn/kd_turn used everywhere heading-hold steering happens: TURNING, OBST_CRITICAL, BETWEEN
+TURN_ANGLE_TARGET = 90   # degrees to rotate (IMU heading) before exiting TURNING
+target_heading = 0   # absolute target heading for the current turn, set to turn_count*90 (CW) or -turn_count*90 (CCW) on entering TURNING - starts at 0 (not None) so the new unconditional heading_error computation has a target before the first turn
+
+kp_turn = 1.5
+kd_turn = 0.45
+
+#derivative-tracking state for OBST_CRITICAL's/BETWEEN's target_heading+/-90 turn_error cases
+#(their own target differs from target_heading, so they can't share previous_heading_error) -
+#reset to None whenever OBST_CRITICAL/BETWEEN is freshly entered or the target shifts phase
+previous_offset_turn_error = None
+
+#SENSOR FUSION WEIGHTS (ported from open_alex.py) - blend of IMU heading control vs camera
+#wall-following, used for steering in STRAIGHT and TURNING only
+IMU_WEIGHT = 0.7
+CAM_WEIGHT = 0.3
+turn_exit_time = None
+SETTLE_TIME = 0.5
+previous_heading_error = None
+
+#LEAVE PARKING VALUES (only its "phase 1" drive-straight-out is implemented there)
 leave_start_time = None
 leave_forward_time = 0.65   # seconds to drive forward out of parking before handing off to normal driving
 #0.7
 
 
-#WAIT/FORCE VALUES (from obstacle_challenge.py - "wrong side" block seen early, near a turn)
+#WAIT/FORCE VALUES ("wrong side" block seen early, near a turn)
 EARLY_LINE_Y1 = 250
 EARLY_LINE_Y2 = 380   # sits above bottom_frame's own y-range, so the lap line is seen earlier/farther away
 EARLY_LINE_MIN_PX = 200   # tune on field
 CENTER_BLACK_FULL_PX = 95   # 10x10 center frame pixel count considered "mostly filled" with black (tune on field)
 block_force_turn_time = 0.3   # seconds to force-turn once the center frame fills
 block_force_turn_start = None
-WAIT_DELAY = 0.35   # seconds to hold steering after entering WAIT before its own logic starts running
-wait_start_time = None
-left = 0   # 1 only for the one-time WAIT/FORCE triggered right as LEAVE finishes - reverses FORCE's steering direction once, then resets to 0
+left_parking = False   # True only for the one-time WAIT/FORCE triggered right as LEAVE finishes - reverses the forcing phase's steering direction once, then resets to False
 
 #STATES
-STRAIGHT = 0   # no red/green obstacle visible - wall following
-OBSTACLE = 1   # sees a red or green obstacle - avoidance steering
-TURNING = 2    # executing a turn at a lap line
-BETWEEN = 3    # entered only by finishing a WAIT/FORCE sequence while lines is 11 or 12 - CCW does what STRAIGHT does (blocks treated as red, else wall-follow), CW goes straight to PARK
-PARK = 4       # CW after 12 lines - stop
-LEAVE = 5      # starting state - drive straight out of parking before normal driving begins
-WAIT = 6       # saw the "wrong side" block early - drive nearly straight until the center frame fills with black
-FORCE = 7      # force a hard turn for a fixed duration, then hand back to normal driving
+LEAVE = 0      # starting state - drive straight out of parking before normal driving begins
+STRAIGHT = 1   # no red/green obstacle visible - wall following
+OBSTACLE = 2   # sees a red or green obstacle - avoidance steering
+TURNING = 3    # executing a turn at a lap line
+BETWEEN = 4    # entered only by finishing a WAIT/FORCE sequence while lines is 11 or 12 - CCW does what STRAIGHT does (blocks treated as red, else wall-follow), CW goes straight to PARK
+PARK = 5       # CW after 12 lines - stopjn m
+OBST_CRITICAL = 6   # saw the "wrong side" block early - drive nearly straight until the center frame fills with black, then force a hard turn for a fixed duration before handing back to normal driving
 state = STRAIGHT
 
-STATE_NAMES = {STRAIGHT: "STRAIGHT", OBSTACLE: "OBSTACLE", TURNING: "TURNING", BETWEEN: "BETWEEN", PARK: "PARK", LEAVE: "LEAVE", WAIT: "WAIT", FORCE: "FORCE"}
-
-indicator = "abcd"
+STATE_NAMES = {LEAVE: "LEAVE", STRAIGHT: "STRAIGHT", OBSTACLE: "OBSTACLE", TURNING: "TURNING",
+               BETWEEN: "BETWEEN", PARK: "PARK", OBST_CRITICAL: "OBST_CRITICAL"}
 
 #Last sent message sent to serial to compare against current message to avoid sending duplicates
 last_message = ""
@@ -150,7 +189,7 @@ picam2.start()
 
 time.sleep(3)  # Allow camera to warm up 
 
-picam2.set_controls({"Contrast": 1})  # Set frame duration to 30 FPS
+picam2.set_controls({"Contrast": 1}) 
 
 #wall-following steering, shared by the STRAIGHT and BETWEEN states (only wall_low/high/idx
 #differs between them, computed per-frame in the main loop before this is called)
@@ -168,6 +207,14 @@ def wall_follow(image, image_source):
     if state == BETWEEN:
         #BETWEEN: pretend there's a wall at a fixed offset from wall_frame's own x1, regardless of what's actually detected
         left_x = wall_frame.x1 + between_left_wall_offset
+    elif CW:
+        #CW: nudge the left wall position by a fixed offset - uses the REAL detected value when
+        #available (stays dynamic to whatever the camera sees), falling back to the frame's own
+        #edge only when nothing is detected at all - the offset is always applied either way (ported from open_alex.py)
+        left_x = (left_x if left_x is not None else wall_frame.x1) + wall_offset_cw
+    elif CCW:
+        #CCW: mirror of the above - nudge the right wall position (ported from open_alex.py)
+        right_x = (right_x if right_x is not None else wall_frame.x2) - wall_offset_ccw
 
     mid_y = (scan_y1 + scan_y2) // 2
     if left_x is not None:
@@ -197,23 +244,101 @@ def wall_follow(image, image_source):
     dz_y2 = scan_y2 + 10
     cv2.rectangle(image, (dz_x1, dz_y1), (dz_x2, dz_y2), (200,200,200), 1)
 
-    wall_error = corridor_center - img_center
+    raw_wall_error = corridor_center - img_center
+    wall_error = raw_wall_error
     if abs(wall_error) <= dead_zone_px:
         wall_error = 0
 
     cv2.line(image, (img_center, mid_y), (int(corridor_center), mid_y), (0,0,255), 2)  # error line
 
-    #PD control for wall-following steering
-    derivative_wall = wall_error - previous_error_wall
-    control_signal_wall = (kp_wall * wall_error) + (kd_wall * derivative_wall)
-    previous_error_wall = wall_error
+    if previous_error_wall is None:
+        previous_error_wall = raw_wall_error
 
-    result = center + control_signal_wall
-    result = max(center - margin, min(center + margin, result))
+    #PD control for wall-following steering - derivative uses the raw (non-dead-zoned) error, so
+    #crossing the dead-zone boundary doesn't itself create a derivative spike (ported from open_alex.py)
+    derivative_wall = raw_wall_error - previous_error_wall
+    control_signal_wall = (kp_wall * wall_error) + (kd_wall * derivative_wall)
+    previous_error_wall = raw_wall_error
+
+    #center is not added here - callers combine this raw correction with steering_imu's and
+    #add center exactly once, at the very end (ported from open_alex.py)
+    result = max(-steering_margin, min(steering_margin, control_signal_wall))
     result = round(result)
 
-    print(f"Wall Left X: {left_x}, Wall Right X: {right_x}, Corridor Center: {corridor_center}, Img Center: {img_center}, Wall Error: {wall_error}, Steering Value: {result}")
-    return result
+    # print(f"Wall Left X: {left_x}, Wall Right X: {right_x}, Corridor Center: {corridor_center}, Img Center: {img_center}, Wall Error: {wall_error}, Steering Correction: {result}")
+    return result, left_x, right_x
+
+#Find the single largest obstacle (red or green) across both contour lists, draw a line from its
+#bounding rectangle's near corner to a fixed reference point, and return that line's absolute
+#angle plus the obstacle's color and corner (ported from WRO-FE-XX's
+#ImageAlgorithms.find_obstacle_angle_and_draw_lines(), with its CrashStates handling dropped -
+#that state machine belongs to WRO-FE-XX's own crash detection, not this codebase). Red obstacles
+#are steered around using their bounding rectangle's bottom-right corner (passed on the left,
+#reference point near the bottom-left of the frame); green obstacles use their bottom-left corner
+#(passed on the right, reference point near the bottom-right).
+def find_obstacle_angle_and_draw_lines(red_contours, green_contours, image):
+    global old_obstacle_angle, old_obstacle_is_green
+
+    candidates = [(c, False) for c in red_contours] + [(c, True) for c in green_contours]
+    if not candidates:
+        return None, None, None, None
+
+    #pick the biggest blob overall, then check if the second biggest is actually closer (larger
+    #bottom-edge y) - same "closer second rectangle wins" rule as the original
+    candidates.sort(key=lambda item: cv2.contourArea(item[0]), reverse=True)
+    contour, is_green = candidates[0]
+    x, y, w, h = cv2.boundingRect(contour)
+    y_bottom = y + h
+
+    if len(candidates) > 1:
+        contour2, is_green2 = candidates[1]
+        x2, y2, w2, h2 = cv2.boundingRect(contour2)
+        y_bottom2 = y2 + h2
+        if y_bottom2 > y_bottom:
+            x, y, w, h, is_green = x2, y2, w2, h2, is_green2
+            y_bottom = y_bottom2
+
+    #obstacle is too close to the bottom of the frame to measure reliably
+    if y_bottom > image.shape[0] - 60:
+        if y_bottom > image.shape[0] - 30:
+            return None, None, None, None
+        else:
+            return old_obstacle_angle, old_obstacle_is_green, x, y_bottom
+
+    if is_green:
+        corner = (x, y + h)              # block's own bottom-left corner
+        ref_point = (RIGHT_OBSTACLE_X_THRESHOLD, image.shape[0])
+        box_color = (0, 255, 0)
+    else:
+        corner = (x + w, y + h)          # block's own bottom-right corner
+        ref_point = (LEFT_OBSTACLE_X_THRESHOLD, image.shape[0])
+        box_color = (0, 0, 255)
+
+    cv2.rectangle(image, (x, y), (x + w, y + h), box_color, 1)
+    cv2.line(image, corner, ref_point, box_color, 2)
+
+    #absolute angle of the line from the obstacle's corner to the reference point
+    rad_angle = math.atan2(corner[1] - image.shape[0], corner[0] - ref_point[0])
+    angle = 90 + math.degrees(rad_angle)
+
+    old_obstacle_angle = angle
+    old_obstacle_is_green = is_green
+    return angle, is_green, corner[0], corner[1]
+
+#Convert an obstacle's absolute angle into a servo steering value (ported from WRO-FE-XX's
+#ImageAlgorithms.calculate_servo_angle_from_obstacle(), using this file's center/steering_margin
+#in place of WRO-FE-XX's STRAIGHT_ANGLE/MIN_ANGLE/MAX_ANGLE). The offset sign is flipped relative
+#to WRO-FE-XX's formula: there, a higher servo_angle steers left; here (per wall_follow's
+#corridor-error convention) a higher steering_value steers right, so the correction is added
+#instead of subtracted to make red bias left and green bias right as expected.
+def calculate_servo_angle_from_obstacle(object_angle, is_green):
+    if object_angle is None:
+        return None
+    if is_green:
+        servo_angle = center + (object_angle + OBJECT_LINE_ANGLE_THRESHOLD) * OBSTACLE_KP
+    else:
+        servo_angle = center + (object_angle - OBJECT_LINE_ANGLE_THRESHOLD) * OBSTACLE_KP
+    return max(center - steering_margin, min(center + steering_margin, round(servo_angle)))
 
 #main loop to show camera feed
 while True:
@@ -239,129 +364,49 @@ while True:
 
     #count orange line when detected (laps)
     if (orangePx > 200) and (orangePx < 2500):
-        if time.time() - start_time_line > 1.5:
+        if time.time() - start_time_line > 2.0:
             orangeLine += 1
             start_time_line = time.time()
             line_detected = True
 
     #count blue line when detected (laps)
     if (bluePx > 200) and (bluePx < 2500):
-        if time.time() - start_time_line > 1.5:
+        if time.time() - start_time_line > 2.0:
             blueLine += 1
             start_time_line = time.time()
             line_detected = True
 
     lines = max(orangeLine, blueLine)
 
+    #start the stop timer the first frame lines reaches 12 - LINES_STOP_DELAY seconds later,
+    #speed is forced to 0 regardless of state (see the override near message-building below)
+    if (lines >= 12) and (lines_stop_time is None):
+        lines_stop_time = time.time()
+
     #decide CW or CCW from whichever lap-line color is seen first
     if (CW == 0) and (CCW == 0):
         
         if 200 < orangePx < 2500:
-            print("cw")
+            print("Jadoo going clockwise.... woooooo") # Jadoo is the vehicle name if you didnt know
             CW = 1
         elif 200 < bluePx < 2500:
-            print("ccw")
+            print("Jadoo going counter-clockwise.... weeeeeee")
             CCW = 1
 
     #detect red across the entire screen and draw a bounding box around the largest blob
     red_frame = Frame(0, 120, 640, 480, image, [lowRed1, lowRed2], [highRed1, highRed2], frameColor=(0,0,255), source=image_source)
-    red_contours = red_frame.getColorContours([0,1], min_area=1000)
+    red_contours = red_frame.getColorContours([0,1], min_area=600)
 
     #detect green across the entire screen and draw a bounding box around the largest blob
     green_frame = Frame(0, 120, 640, 480, image, [lowGreen], [highGreen], frameColor=(0,255,0), source=image_source)
-    green_contours = green_frame.getColorContours(0, min_area=1000)
+    green_contours = green_frame.getColorContours(0, min_area=600)
 
-    #BETWEEN: every block from here on is driven around exactly like a red block
-    if state == BETWEEN:
-        red_contours = red_contours + green_contours
-        green_contours = []
+    # #detect green across the entire screen and draw a bounding box around the largest blob
+    # green_frame = Frame(0, 120, 640, 480, image, [lowGreen, lowBlue], [highGreen, highBlue], frameColor=(0,255,0), source=image_source)
+    # green_contours = green_frame.getColorContours([0,1], min_area=1000)
 
-    if red_contours:
-        largest_red = max(red_contours, key=cv2.contourArea)
-        rx, ry, rw, rh = cv2.boundingRect(largest_red)
-        cv2.rectangle(image, (rx, ry), (rx + rw, ry + rh), (0,0,255), 2)
-
-        bottom_right_dot = (rx + rw, ry + rh)
-        bottom_left_dot = (0, image.shape[0])
-
-        cv2.circle(image, bottom_right_dot, 6, (0,0,255), -1)
-        cv2.circle(image, bottom_left_dot, 6, (0,0,255), -1)
-
-        #PID control using the line's two x values as the error
-        error = bottom_right_dot[0] - bottom_left_dot[0]
-
-        #PD terms from the x error
-        p_term = kp * error
-        derivative = error - previous_error
-        d_term = kd * derivative
-        previous_error = error
-
-        #the closer the block (larger y, nearer the bottom of the screen), the harsher the correction;
-        #the farther away (smaller y), the lighter it is
-        y_error = bottom_right_dot[1] - bottom_left_dot[1]
-        distance = abs(y_error)
-        y_factor = max(0, 1 - (ky * distance / image.shape[0]))   # 1.0 = touching the bottom (closest), 0.0 = at/past the falloff point set by ky
-
-        #scale PD output by distance falloff to get final steering value
-        control_signal = (p_term + d_term) * y_factor
-        steering_value_red = center + control_signal
-
-        #clamp steering to center +/- margin
-        steering_value_red = max(center - margin, min(center + margin, steering_value_red))
-
-        #round everything to the nearest whole number
-        error = round(error)
-        p_term = round(p_term)
-        d_term = round(d_term)
-        y_error = round(y_error)
-        steering_value_red = round(steering_value_red)
-
-        print(f"Right X: {bottom_right_dot[0]}, Left X: {bottom_left_dot[0]}, Y Error: {y_error}, Y Factor: {round(y_factor, 2)}")
-        print(f"P: {p_term}, D: {d_term}, Error: {error}, Steering Value: {steering_value_red}, dir:{CCW},{CW}")
-
-    if green_contours:
-        largest_green = max(green_contours, key=cv2.contourArea)
-        gx, gy, gw, gh = cv2.boundingRect(largest_green)
-        cv2.rectangle(image, (gx, gy), (gx + gw, gy + gh), (0,255,0), 2)
-
-        bottom_left_dot_green = (gx, gy + gh)
-        bottom_right_dot_green = (image.shape[1], image.shape[0])
-
-        cv2.circle(image, bottom_left_dot_green, 6, (0,255,0), -1)
-        cv2.circle(image, bottom_right_dot_green, 6, (0,255,0), -1)
-
-        #PID control using the line's two x values as the error
-        error_green = bottom_right_dot_green[0] - bottom_left_dot_green[0]
-
-        #PD terms from the x error
-        p_term_green = kp * error_green
-        derivative_green = error_green - previous_error_green
-        d_term_green = kd * derivative_green
-        previous_error_green = error_green
-
-        #the closer the block (larger y, nearer the bottom of the screen), the harsher the correction;
-        #the farther away (smaller y), the lighter it is
-        y_error_green = bottom_right_dot_green[1] - bottom_left_dot_green[1]
-        distance_green = abs(y_error_green)
-        y_factor_green = max(0, 1 - (ky * distance_green / image.shape[0]))   # 1.0 = touching the bottom (closest), 0.0 = at/past the falloff point set by ky
-    
-
-        #scale PD output by distance falloff to get final steering value
-        control_signal_green = (p_term_green + d_term_green) * y_factor_green
-        steering_value_green = center - control_signal_green
-
-        #clamp steering to center +/- margin
-        steering_value_green = max(center - margin, min(center + margin, steering_value_green))
-
-        #round everything to the nearest whole number
-        error_green = round(error_green)
-        p_term_green = round(p_term_green)
-        d_term_green = round(d_term_green)
-        y_error_green = round(y_error_green)
-        steering_value_green = round(steering_value_green)
-
-        print(f"Right X: {bottom_right_dot_green[0]}, Left X: {bottom_left_dot_green[0]}, Y Error: {y_error_green}, Y Factor: {round(y_factor_green, 2)}")
-        print(f"P: {p_term_green}, D: {d_term_green}, Error: {error_green}, Steering Value: {steering_value_green}")
+    obstacle_angle, obstacle_is_green, obstacle_x, obstacle_y = find_obstacle_angle_and_draw_lines(red_contours, green_contours, image)
+    steering_value_obstacle = calculate_servo_angle_from_obstacle(obstacle_angle, obstacle_is_green)
 
     #detect black in the same frame region as the obstacles, draw-only (not used in any calculation)
     black_frame = Frame(0, 120, 640, 480, image, [lowBlack], [highBlack], frameColor=(255,0,0), source=image_source)
@@ -372,6 +417,18 @@ while True:
     wall_low  = [lowBlack] if state == BETWEEN else [lowBlack, lowMagenta]
     wall_high = [highBlack] if state == BETWEEN else [highBlack, highMagenta]
     wall_idx  = 0 if state == BETWEEN else [0, 1]
+
+    #IMU heading-hold signal - target_heading is whatever the early-line-detection logic below
+    #last set it to; only read here, never written (ported from open_alex.py)
+    heading_error = ((target_heading - heading + 180) % 360) - 180
+    if previous_heading_error is None:
+        previous_heading_error = heading_error
+    derivative_heading = heading_error - previous_heading_error
+    previous_heading_error = heading_error
+
+    #center is not added here - combined with steering_cam and added once, at the very end (ported from open_alex.py)
+    steering_imu = heading_error * kp_turn + derivative_heading * kd_turn
+    print(f"steering imu {round(steering_imu,1)} target heading {target_heading} current heading {round(heading,1)}")
 
     #four small corner frames, stepping diagonally in from each top corner of black_frame -
     #detect and draw black(+magenta) contours, and keep their pixel counts to check if a side is "full"
@@ -409,6 +466,17 @@ while True:
     early_bluePx = early_line_frame.getContour(0, contourColor=(255,85,0))
     early_orangePx = early_line_frame.getContour(1, contourColor=(0,128,255))
 
+    if line_detected:
+        #a lap line was seen AND the hugged-side wall has dropped out of view (ported from
+        #open_challenge.py) - hold the current steering and wait turn_delay seconds before turning
+        if turn_delay_time is None:
+            turn_delay_time = time.time()
+        if time.time() - turn_delay_time > turn_delay:
+            state = TURNING
+            turn_delay_time = None
+
+    # print(IMU_WEIGHT)
+    # print(CAM_WEIGHT)
     if state == PARK:
         speed_value = 0
         steering_value = center
@@ -439,82 +507,118 @@ while True:
         if elapsed < leave_forward_time:
             #drive straight out of parking, angled toward the CW/CCW side
             speed_value = 135
-            steering_value = center + margin if CW else center - margin
+            steering_value = center + steering_margin if CW else center - steering_margin
             on = 1
         else:
             #done leaving - check for a block needing WAIT/FORCE treatment before handing off to normal driving
-            if CW and (redPx > OBSTACLE_TURN):
-                state = WAIT
-                wait_start_time = time.time()
-                left = 1
-            elif CCW and (greenPx > OBSTACLE_TURN):
-                state = WAIT
-                wait_start_time = time.time()
-                left = 1
+            if CW and (redPx > BLOCK_MIN_PIXELS):
+                # state = OBST_CRITICAL
+                block_force_turn_start = None
+                left_parking = True
+                state = OBSTACLE
+            elif CCW and (greenPx > BLOCK_MIN_PIXELS):
+                # state = OBST_CRITICAL
+                block_force_turn_start = None
+                left_parking = True
+                state = OBSTACLE
             else:
                 state = OBSTACLE   # placeholder - redispatched to STRAIGHT/OBSTACLE/BETWEEN next frame
             leave_start_time = None
 
     elif state == TURNING:
-        if CW:
-            steering_value = center + margin
-        elif CCW:
-            steering_value = center - margin
-
         #if an obstacle shows up mid-turn, bail out back to normal driving/avoidance right away
-        if (redPx > OBSTACLE_TURN) or (greenPx > OBSTACLE_TURN):
+        #(unchanged - checked first, same as before this port)
+        if (redPx > BLOCK_MIN_PIXELS) or (greenPx > BLOCK_MIN_PIXELS):
             state = OBSTACLE   # placeholder - redispatched to STRAIGHT/OBSTACLE/BETWEEN next frame
             line_detected = False
             turn_delay_time = None
-        elif time.time() - turning_start_time > turn_execution_time:
-            state = STRAIGHT
-            line_detected = False
-            turn_delay_time = None
 
-    elif state == WAIT:
-        #hold steering for WAIT_DELAY after entering, before this state's own logic starts running
-        if time.time() - wait_start_time < WAIT_DELAY:
-            pass
         else:
-            #saw the "wrong side" block early - keep going nearly straight until the center frame fills with black
-            if CW:
-                steering_value = center - 5
-            if CCW:
-                steering_value = center + 5
+            #PD heading-hold, ported from open_alex.py's TURNING state - shares kp_turn/kd_turn
+            #with OBST_CRITICAL/BETWEEN's own PD turn_error handling. Pure IMU, no camera term:
+            #wall_follow() only runs in STRAIGHT, so there's no steering_cam to blend in here
+            turned_enough = abs(heading_error) <= 35   # loose exit (was <=2) - remainder corrected by STRAIGHT's post-turn settle blend
 
-            center_frame = Frame(315, 190, 325, 200, image, [lowBlack], [highBlack], frameColor=(0,255,255), source=image_source)
-            centerBlackPx = center_frame.getContour(0, contourColor=(0,255,0))
-
-            if centerBlackPx >= CENTER_BLACK_FULL_PX:
-                state = FORCE
-                block_force_turn_start = time.time()
-                wait_start_time = None
-
-    elif state == FORCE:
-        #force a hard turn for a fixed duration, then hand back to normal driving -
-        #reversed direction only for the one-time WAIT/FORCE triggered right after LEAVE
-        if left == 1:
-            if CW:
-                steering_value = center - margin
-            elif CCW:
-                steering_value = center + margin
-        else:
-            if CW:
-                steering_value = center + margin
-            elif CCW:
-                steering_value = center - margin
-
-        if time.time() - block_force_turn_start > block_force_turn_time:
-            #lines has no bearing on BETWEEN anywhere else - this is the ONLY way in: finishing
-            #this WAIT/FORCE sequence while lines reads 11 or 12 (it may have ticked over to 12
-            #mid-maneuver, since lap-line detection runs every frame regardless of state)
-            if lines == 11 or lines == 12:
-                state = BETWEEN
+            if turned_enough: #if the heading has rotated close enough to the target angle, go back to straight mode
+                state = STRAIGHT
+                line_detected = False
+                # frontBlack_detected = False
+                side_wall_missing = False
+                previous_error_wall = None
+                previous_heading_error = None
+                turn_delay_time = None
+                turn_exit_time = time.time()
+                speed_value = DEFAULT_SPEED
+                print("EXIT TURN")
+            elif abs(heading_error) > 45:
+                speed_value = 160
+            elif abs(heading_error) > 35:
+                speed_value = 140
             else:
-                state = OBSTACLE   # placeholder - redispatched to STRAIGHT/OBSTACLE next frame
-            line_detected = False
-            turn_delay_time = None
-            left = 0   # one-time reversed steering used - never apply it again
+                speed_value = 130
+
+            #center added exactly once here (ported from open_alex.py) - no camera term to blend
+            steering_value = center + round(steering_imu)
+
+    elif state == OBST_CRITICAL:
+        #saw the "wrong side" block early - keep going nearly straight until the center frame fills with black
+        turn_error = (((target_heading - 90 if CW else target_heading + 90)  - heading + 180) % 360) - 180
+        if previous_offset_turn_error is None:
+            previous_offset_turn_error = turn_error
+        derivative_offset_turn_error = turn_error - previous_offset_turn_error
+        previous_offset_turn_error = turn_error
+        steering_value = center + turn_error * kp_turn + derivative_offset_turn_error * kd_turn
+        turned_enough = abs(turn_error) <= 2
+
+        center_frame = Frame(315, 190, 325, 200, image, [lowBlack], [highBlack], frameColor=(0,255,255), source=image_source)
+        centerBlackPx = center_frame.getContour(0, contourColor=(0,255,0))
+
+        if centerBlackPx >= CENTER_BLACK_FULL_PX:
+            #switch to the forcing phase, still within WAIT
+            block_force_turn_start = time.time()
+
+        if block_force_turn_start is not None:
+            #forcing phase: hard turn for a fixed duration, then hand back to normal driving -
+            #reversed direction only for the one-time WAIT/FORCE triggered right after LEAVE
+            if left_parking:
+                turn_error = (((target_heading + 90 if CW else target_heading - 90)  - heading + 180) % 360) - 180
+                if previous_offset_turn_error is None:
+                    previous_offset_turn_error = turn_error
+                derivative_offset_turn_error = turn_error - previous_offset_turn_error
+                previous_offset_turn_error = turn_error
+                steering_value = center + turn_error * kp_turn + derivative_offset_turn_error * kd_turn
+                turned_enough = abs(turn_error) <= 2
+            else:
+                #same target as the module-level heading_error - reuse the already PD-damped steering_imu
+                turn_error = heading_error
+                steering_value = center + steering_imu
+                turned_enough = abs(turn_error) <= 2
+
+                if turned_enough: #if the heading has rotated the target angle, go back to straight mode
+                    state = STRAIGHT
+                    line_detected = False
+                    # frontBlack_detected = False
+                    side_wall_missing = False
+                    previous_error_wall = None
+                    previous_heading_error = None
+                    turn_delay_time = None
+                    print("EXIT TURN")
+
+            if time.time() - block_force_turn_start > block_force_turn_time:
+                #lines has no bearing on BETWEEN anywhere else - this is the ONLY way in: finishing
+                #this WAIT/FORCE sequence once lines has reached 12 (it may have ticked over
+                #mid-maneuver, since lap-line detection runs every frame regardless of state)
+
+                #SHADYA: How can it enter BETWEEN state right after OBST_CRITICAL, Formerly WAIT
+                if lines >= 12:
+                    state = BETWEEN
+                else:
+                    state = OBSTACLE   # placeholder - redispatched to STRAIGHT/OBSTACLE next frame
+                line_detected = False
+                turn_delay_time = None
+                left_parking = False   # one-time reversed steering used - never apply it again
+                block_force_turn_start = None   # reset for the next WAIT cycle
+
 
     elif state == BETWEEN:
         speed_value = 140
@@ -528,93 +632,160 @@ while True:
 
             if park_box_px >= PARK_BOX_MAGENTA_PX:
                 state = PARK
-
-            #every red/green block is treated as a red block (already merged into red_contours
-            #above), otherwise fall back to wall-following - same as STRAIGHT
-            elif red_contours:
-                steering_value = steering_value_red
-                cv2.line(image, bottom_right_dot, bottom_left_dot, (0,0,255), 2)
             else:
-                steering_value = wall_follow(image, image_source)
+                # steering_value = wall_follow(image, image_source)
+                turn_error = (((target_heading + 90 if CW else target_heading - 90)  - heading + 180) % 360) - 180
+                if previous_offset_turn_error is None:
+                    previous_offset_turn_error = turn_error
+                derivative_offset_turn_error = turn_error - previous_offset_turn_error
+                previous_offset_turn_error = turn_error
+                steering_value = center + turn_error * kp_turn + derivative_offset_turn_error * kd_turn
+                turned_enough = abs(turn_error) <= 2
 
-    elif CW and (early_orangePx > EARLY_LINE_MIN_PX) and ((lines >= 11) or (greenPx > OBSTACLE_TURN)):
-        #early sighting of a green block near a CW turn - the "wrong side" case (or, at lines>=11, forced regardless of any block)
-        print("wait green")
-        state = WAIT
-        if time.time() - start_time_turn_count > 1.5:
+    elif (early_orangePx > EARLY_LINE_MIN_PX) or (early_bluePx > EARLY_LINE_MIN_PX):
+        #decide CW/CCW here too, before target_heading needs it below - the early zone sees the
+        #first lap line before bottom_frame's own CW/CCW check (further down the frame) ever
+        #gets a chance to fire, so without this, target_heading's "if CW" would evaluate on the
+        #first turn while CW/CCW are still both 0, and silently fall through to the CCW formula
+        #regardless of which color line is actually present
+        if (CW == 0) and (CCW == 0):
+            if early_orangePx > EARLY_LINE_MIN_PX:
+                print("Jadoo going clockwise (early zone)....")
+                CW = 1
+            elif early_bluePx > EARLY_LINE_MIN_PX:
+                print("Jadoo going counter-clockwise (early zone)....")
+                CCW = 1
+
+        #approaching a turn - count it, same 1.5s debounce pattern as orangeLine/blueLine
+        if time.time() - start_time_turn_count > 2.0:
             turn_count += 1
             start_time_turn_count = time.time()
-        wait_start_time = time.time()
+            target_heading = (turn_count * TURN_ANGLE_TARGET) % 360 if CW else (-turn_count * TURN_ANGLE_TARGET) % 360
 
+        if CW and (early_orangePx > EARLY_LINE_MIN_PX) and (greenPx > BLOCK_MIN_PIXELS):
+            #early sighting of a green block near a CW turn - the "wrong side" case (or, at lines>=12, forced regardless of any block)
+            print("wait green")
+            # state = OBST_CRITICAL
+            block_force_turn_start = None
+            CRITICAL_TURN = True
 
-
-    elif CCW and (early_bluePx > EARLY_LINE_MIN_PX) and ((lines >= 11) or (redPx > OBSTACLE_TURN)):
-        #early sighting of a red block near a CCW turn - the "wrong side" case (or, at lines>=11, forced regardless of any block)
-        print("wait red")
-        state = WAIT
-        if time.time() - start_time_turn_count > 1.5:
-            turn_count += 1
-            start_time_turn_count = time.time()
-        wait_start_time = time.time()
-
-    elif line_detected:
-        #a lap line was seen - hold the current steering and wait turn_delay seconds before actually turning
-        if turn_delay_time is None:
-            turn_delay_time = time.time()
-        if time.time() - turn_delay_time > turn_delay:
-            state = TURNING
-            turning_start_time = time.time()
-            turn_delay_time = None
+        elif CCW and (early_bluePx > EARLY_LINE_MIN_PX) and (redPx > BLOCK_MIN_PIXELS):
+            #early sighting of a red block near a CCW turn - the "wrong side" case (or, at lines>=12, forced regardless of any block)
+            print("wait red")
+            # state = OBST_CRITICAL
+            block_force_turn_start = None
+            CRITICAL_TURN = True
 
     else:
         turn_delay_time = None
 
-        if red_contours or green_contours:
-            #OBSTACLE: handle whichever blob is closer first, and only draw that blob's line
-            print("obs")
+        #decide OBSTACLE vs STRAIGHT fresh every frame based on whether a usable obstacle angle
+        #came back this frame (ported choose_output_angle() fallback rule: fall back to
+        #wall-following whenever there's no obstacle angle), then dispatch by state - matches how
+        #every other state (PARK/LEAVE/TURNING/OBST_CRITICAL/BETWEEN) is identified above
+        if steering_value_obstacle is not None:
             state = OBSTACLE
-            if red_contours and green_contours:
-                if distance <= distance_green:
-                    steering_value = steering_value_red
-                    cv2.line(image, bottom_right_dot, bottom_left_dot, (0,0,255), 2)
-                else:
-                    steering_value = steering_value_green
-                    cv2.line(image, bottom_left_dot_green, bottom_right_dot_green, (0,255,0), 2)
-            elif red_contours:
-                steering_value = steering_value_red
-                cv2.line(image, bottom_right_dot, bottom_left_dot, (0,0,255), 2)
-            elif green_contours:
-                steering_value = steering_value_green
-                cv2.line(image, bottom_left_dot_green, bottom_right_dot_green, (0,255,0), 2)
-
         else:
-            #STRAIGHT: no obstacle visible - fall back to centering between the walls
             state = STRAIGHT
-            steering_value = wall_follow(image, image_source)
 
-    #if a corner frame is solidly black ("full"), nudge steering away from that side - skipped once parked
+        if state == OBSTACLE:
+            steering_value = steering_value_obstacle
+
+        elif state == STRAIGHT:
+            #camera wall-following signal - only computed here, since wall_follow() should only
+            #run during STRAIGHT (ported from open_alex.py)
+            steering_cam, left_x, right_x = wall_follow(image, image_source)
+            print(f"steering wall {steering_cam}")
+
+            if turn_exit_time is not None:
+                elapsed = time.time() - turn_exit_time
+                if elapsed < SETTLE_TIME:
+                    #post-turn settle: lean on IMU correction briefly to finish closing the
+                    #heading gap left by TURNING's loose exit tolerance
+                    IMU_WEIGHT = 0.4
+                    CAM_WEIGHT = 0.6
+                else:
+                    turn_exit_time = None
+                    IMU_WEIGHT = 0.2
+                    CAM_WEIGHT = 0.8
+            else:
+                IMU_WEIGHT = 0.2
+                CAM_WEIGHT = 0.8
+
+            if (CW == 1) and (CCW == 0):
+                side_wall_missing = right_x is None
+            elif (CW == 0) and (CCW == 1):
+                side_wall_missing = left_x is None
+            steering_value = center + round(IMU_WEIGHT * steering_imu + CAM_WEIGHT * steering_cam)
+            print(f"STR STEER {steering_value}")
+
+    #skipped once parked
     if state != PARK:
+        if CRITICAL_TURN:
+            #front-center box only, for a fixed window after CRITICAL_TURN triggers - if it
+            #fills with black, nudge steering toward the turn direction (CW right, CCW left)
+            if CRITICAL_TURN_START is None:
+                CRITICAL_TURN_START = time.time()
+
+            front_center_frame = Frame(FRONT_CENTER_X1, FRONT_CENTER_Y1, FRONT_CENTER_X2, FRONT_CENTER_Y2, image, [lowBlack], [highBlack], frameColor=(0,255,0), source=image_source)
+            front_center_contours = front_center_frame.getColorContours(0, min_area=10)
+            cv2.rectangle(image, (FRONT_CENTER_X1, FRONT_CENTER_Y1), (FRONT_CENTER_X2, FRONT_CENTER_Y2), (0,255,0), 1)
+            front_center_px = sum(cv2.contourArea(c) for c in front_center_contours)
+
+            if front_center_px >= FRONT_CENTER_FULL_PX:
+                if CW:
+                    steering_value += FRONT_CENTER_STEER_NUDGE
+                elif CCW:
+                    steering_value -= FRONT_CENTER_STEER_NUDGE
+
+            if time.time() - CRITICAL_TURN_START > CRITICAL_TURN_TIME:
+                CRITICAL_TURN = False
+                CRITICAL_TURN_START = None
+
+        #if a corner frame is solidly black ("full"), nudge steering away from that side
         right_full = (tr1Px >= CORNER_FULL_PX) and (tr2Px >= CORNER_FULL_PX)
         left_full = (tl1Px >= CORNER_FULL_PX) and (tl2Px >= CORNER_FULL_PX)
-
         if right_full:
+            steering_value -= 15
+            print("             ***** Nudge Right More")
+        elif (tr1Px >= CORNER_FULL_PX) or (tr2Px >= CORNER_FULL_PX):
             steering_value -= 10
-        elif (tr1Px >= CORNER_FULL_PX) ^ (tr2Px >= CORNER_FULL_PX):
-            steering_value -= 5
+            print("             ***** Nudge Right")
         if left_full:
+            steering_value += 15
+            print("             ***** Nudge Left More")
+        elif (tl1Px >= CORNER_FULL_PX) or (tl2Px >= CORNER_FULL_PX):
             steering_value += 10
-        elif (tl1Px >= CORNER_FULL_PX) ^ (tl2Px >= CORNER_FULL_PX):
-            steering_value += 5
-        steering_value = max(center - margin, min(center + margin, steering_value))
+            print("             ***** Nudge Left")
 
-    indicator = state
+        steering_value = max(center - steering_margin, min(center + steering_margin, steering_value))
 
-    #show the current state as text in the top-left corner
-    cv2.putText(image, STATE_NAMES[state], (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255,255,255), 2)
+    #once lines has been >= 12 for LINES_STOP_DELAY seconds, force a stop regardless of state
+    if (lines_stop_time is not None) and (time.time() - lines_stop_time > LINES_STOP_DELAY):
+        speed_value = 0
+        steering_value = center
+
+    #FPS calculation - time elapsed since the previous frame
+    current_frame_time = time.time()
+    fps = 1 / (current_frame_time - prev_frame_time) if current_frame_time != prev_frame_time else 0
+    prev_frame_time = current_frame_time
+
+    print(f"state: {STATE_NAMES[state]} lines: {lines} steering: {steering_value} fps: {fps:.1f}")
+
+    if DRAW:
+        #print values on camera feed (ported from open_alex.py's debug overlay)
+        cv2.putText(image, f"Lines: {lines}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        cv2.putText(image, f"Steering: {steering_value}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        cv2.putText(image, f"Direction: {'CW' if CW else 'CCW'}", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        cv2.putText(image, f"State: {STATE_NAMES[state]}", (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        cv2.putText(image, f"Heading: {heading}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        cv2.putText(image, f"Target Heading: {target_heading}", (10, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        cv2.putText(image, f"FPS: {fps:.1f}", (400, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
+
 
     #send values to micrbit through serial connections
-    message = (f"{steering_value} {speed_value} {on} {lines} {indicator}\n")
-
+    message = (f"$ {steering_value} {speed_value} {on}\n")
 
     #flag large frame-to-frame steering jumps for debugging
     if (abs(steering_value - prev_steer) > 10 or steering_value == 0):
@@ -623,24 +794,26 @@ while True:
     prev_steer = steering_value
 
     # only send if different
-    if True: #message != last_message:
+    if message != last_message:
         print(message)
         ser.write(message.encode())
-        
         ser.flush()
-
+        time.sleep(0.03)  
         last_message = message
-    time.sleep(0.05)
-    #display camera feed after processing
-    cv2.imshow("Camera Feed", image)
+                                                                                                                           
+    if DRAW:
+        #display camera feed after processing
+        cv2.imshow("Camera Feed", image)
 
-    # Check for 'q' key press to exit
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        ser.write(f"100 0 1 {lines} OPEN\n".encode())
-        time.sleep(0.05)
-        break
+        # Check for 'q' key press to exit
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            ser.write(f"$ {center} 0 1\n".encode())
+            ser.flush()
+            time.sleep(0.05)
+            break
 
-ser.write(f"85 0 1 {lines} OPEN\n".encode())
+ser.write(f"$ {center} 0 1\n".encode())
+ser.flush()
 print("FINISH")
 time.sleep(0.10)
 bno.cleanup()
