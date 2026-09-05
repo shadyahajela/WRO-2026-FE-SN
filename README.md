@@ -606,3 +606,78 @@ bjsihgiwobwe
 
 
 # 8. Building Instructions
+
+Step 0: Print the 3D parts
+
+Before assembly, prepare the components listed above and print the 3D parts.
+
+<details>
+
+<summary> <b><span style="font-size:1.1em; background-color:#f2f2f2; padding:4px 8px; border-radius:5px;">Click here to show the 3D printed parts used in the building process</span></b></summary>
+
+</summary>
+
+| Part Name | Quantity |
+| ---------------------------- | -------- |
+| Axle Holder | 3 |
+| Back Wheel Axle | 2 |
+| Back Wheel Connector | 2 |
+| Back Wheel Stopper | 2 |
+| Chassis | 1 |
+| Front Cover | 1 |
+| Front Wheel Axle (Left) | 1 |
+| Front Wheel Axle (Right) | 1 |
+| Front Wheel Stopper | 2 |
+| Lidar Plate | 1 |
+| Motor Gear | 1 |
+| Motor Holder | 1 |
+| Motor Plate | 1 |
+| T-Bone Linkage (Bottom) | 1 |
+| T-Bone Linkage (Top) | 1 |
+| Transfer Linkage (Left) | 1 |
+| Transfer Linkage (Right) | 1 |
+| Wheel Linkage (Bottom Left) | 1 |
+| Wheel Linkage (Bottom Right) | 1 |
+| Wheel Linkage (Top Left) | 1 |
+| Wheel Linkage (Top Right) | 1 |
+
+</details>
+
+**Step 1: Assemble the steering system**
+
+  1. On the edges of the long ackermann steering rod, attach the left and right ackermann tabs with _______ inch VEX screws and lock nuts, positioned such that the tabs are curved inward.
+
+
+
+  2. Attach the short ackermann steering rod on the same plane as the long ackermann steering rod, with the same 2 screws and nuts.
+
+
+
+  3. Mount the long ackermann steering rod onto the front of the chassis using two ______ inch VEX screws and lock nuts, positioned such that the short ackermann rod is facing the back of the chassis and the ackermann tabs are on a lower plane than the long and short ackermann rods.
+
+
+
+  4. Attach the two steering LEGO Spike Prime wheels onto the outsides of the ackermann tabs using ________________ LEGO piece.
+
+
+
+  5. Mount the camera and servo mount onto the fixed long ackermann rod using __________ inch VEX screws and lock nuts.
+
+
+
+  6. Attatch the servo box mount using _____ (#) ___________ inch VEX screws and lock nuts, angled such that the servo hole is positioned over the remaining hole in the long ackermann rod. Remember to keep space under the box for the hexagonal ackermann rod.
+
+
+
+  7. Fit a _______ stud long LEGO axle into the servo-axle coupling. Thread the axle down through the servo box, through the hexagonal ackermann rod, and through the aforementioned hole. Use a _____ inch VEX screw and a lock nut to attach the other side of the hexagonal ackermann rod to the hole in the middle of the short ackermann rod.
+
+
+  8. Screw in the MG90S servo into the servo box using a ______ M2 screw, with the servo fitted into the servo-axle coupling (MAKE SURE: before you fit the servo, the steering is straight, and the servo angle is 90 degrees. If by human error it is not at 90 degrees, use the servo calibration code provided here (LINK) to figure out the degree at which the servo is straight, which you can change in the main code.
+
+
+
+**Step 2: Assemble the drivetrain and chassis body**
+
+**Step 3: Mount electronics**
+
+**Step 4: Upload the software**
