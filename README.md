@@ -116,7 +116,7 @@ We used a metal WLTOYS 144001 differential in our robot, allowing the left and r
 
   * Installed using an inset groove system in the chassis screwed to a detachable 3D-printed motor differential housing clamp that is placed above the differential gear compartment. This will allow for future changes to accommodate different motors and gears if the need arise.
 
-  IMAGE
+    <img width="325.5" height="434.5" alt="image" src="https://github.com/user-attachments/assets/ee7787bb-2744-43ed-9582-68ccc280698d" />
 
   * Wires connected to Arduino Nano and Motor Driver.
   * Spike Prime wheels fitted onto the LEGO motor axle.
@@ -173,7 +173,7 @@ We chose the MG90S Micro Servo for precise steering and weight reduction. The co
 
 * Screwed into a platform plate in front of the chassis, connected to the steering mechanism.
 
-image
+  <img width="579.5" height="434.5" alt="image" src="https://github.com/user-attachments/assets/e2cee4a4-7c77-436e-8802-3e7016e79ba2" />
 
 **Considerations:**
 An alternative would be the MG996R servo, which provides higher torque and more durable metal gears. However, it is larger and requires more power than the MG90S, which would require modifications to our chassis and power system. The MG90S was chosen instead because it is more compact and sufficient for our steering system.
@@ -213,7 +213,7 @@ Drawbacks:
 
 **Iteration 2: 3D Printed Parts and LEGO fusion:**
 
-IMAGE
+<img width="244.5" height="424.5" alt="image" src="https://github.com/user-attachments/assets/24dba292-0dd8-4a38-afa0-b5159013af0e" />
 
 Aspects achieved/retained:
 * Customizability of component mounting, such as custom in-built mounts for the IMU, DC Motor, etc.
@@ -229,7 +229,7 @@ Drawbacks:
 
 **Iteration 3: Fully 3D Printed Chassis:**
 
-IMAGE
+<img width="325.5" height="434.5" alt="image" src="https://github.com/user-attachments/assets/dfaddd8d-61b9-4028-ac8f-ad6805f09e88" />
 
 Aspects achieved/retained:
 * 3D printed camera mount allows for custom mounting; iteration testing resulted in us finding the optimal camera angle and height.
