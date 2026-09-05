@@ -15,7 +15,13 @@ This repository contains engineering materials of a self-driven vehicle's model 
 
 ## Introduction
 
-We are Team Sub-Atomica, Niva, Jeevesh and Shadya. We are united by a passion for STEM, Electronics, coding and jalapeño poppers. We wanted to bring our jouney to many others with the same passions and inspire teenagers around the world. To us its more than just coding or building, its the experiences and connections along the way.
+We are Team Sub-Atomica, Niva, Jeevesh and Shadya. We are united by a passion for STEM, Electronics, coding and jalapeño poppers. We wanted to bring our jouney to many others with the same passions and inspire teenagers around the world. To us its more than just coding or building, its the experie
+
+nces and connections along the way.
+
+<img width="330" height="248" alt="IMG_6842" src="https://github.com/user-attachments/assets/0a190bb5-6e52-40ad-af4f-699491a4c7ea" />
+<img width="330" height="248" alt="159C16BD-3B52-4F8A-85BE-AFA5FE405926 (1)" src="https://github.com/user-attachments/assets/3ceb7079-0236-4770-a4e8-5067800ad02a" />
+<img width="330" height="248" alt="IMG_6102 (1)" src="https://github.com/user-attachments/assets/dd9d688d-cd1b-44b3-93f7-74d6a8bdba7c" />
 
 ## Robot 
 
