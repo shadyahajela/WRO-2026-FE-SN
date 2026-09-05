@@ -1,73 +1,62 @@
-"""
-JGA25-371 Motor + Encoder Test
-Raspberry Pi + L293D
-(ported from the Arduino Nano version)
-
-Wiring (BCM numbering):
-    ENC_A       -> GPIO17 (physical pin 11)
-    ENC_B       -> GPIO27 (physical pin 13)
-    MOTOR_IN1   -> GPIO22 (physical pin 15)
-    MOTOR_IN2   -> GPIO23 (physical pin 16)
-    MOTOR_EN    -> GPIO18 (physical pin 12, hardware PWM)
-
-Requires: pip install gpiozero lgpio
-(gpiozero auto-selects the lgpio pin factory on the Pi 5's RP1 chip)
-"""
-
 import time
-import threading
-from gpiozero import DigitalInputDevice, DigitalOutputDevice, PWMOutputDevice
+import serial
+from gpiozero import RotaryEncoder
 
-ENC_A = 17
-ENC_B = 27
-MOTOR_IN1 = 22
-MOTOR_IN2 = 23
-MOTOR_EN = 18
+ser = serial.Serial('/dev/ttyUSB0', 19200, timeout=1)
+time.sleep(.5)
 
-encoder_count = 0
-count_lock = threading.Lock()
+# Define GPIO pins for Channel A and Channel B
+# These use Broadcom (BCM) pin numbering
+PIN_A = 17
+PIN_B = 27
 
-enc_a = DigitalInputDevice(ENC_A, pull_up=True)
-enc_b = DigitalInputDevice(ENC_B, pull_up=True)
+# Pulses per one revolution of the output (gearbox) shaft - check your specific
+# JGA25-371 variant's datasheet (encoder disc PPR x gear ratio). Placeholder value.
+PULSES_PER_REV = 1
+#990
 
-motor_in1 = DigitalOutputDevice(MOTOR_IN1)
-motor_in2 = DigitalOutputDevice(MOTOR_IN2)
-motor_en = PWMOutputDevice(MOTOR_EN, frequency=1000)
+# Initialize the rotary encoder
+# max_steps=0 removes the upper boundary limit for continuous counting
+encoder = RotaryEncoder(PIN_A, PIN_B, max_steps=0)
 
+center = 100       # steering value: straight ahead
+speed_value = 255  # top speed
+on = 1             # motor direction: 1 - forward
 
-def encoder_isr():
-    global encoder_count
-    with count_lock:
-        if enc_a.value == enc_b.value:
-            encoder_count += 1
-        else:
-            encoder_count -= 1
+run_message = f"{center} {speed_value} {on} 0 RUN\n"
+stop_message = f"{center} 0 {on} 0 RUN\n"
 
+print("Motor running at top speed")
+print("Reading JGA25-370 Encoder... Press Ctrl+C to exit.")
 
-# Equivalent of attachInterrupt(ENC_A, encoderA, CHANGE)
-enc_a.when_activated = encoder_isr
-enc_a.when_deactivated = encoder_isr
-
-# Motor direction: FORWARD
-motor_in1.on()
-motor_in2.off()
-
-# Motor speed: 50% (analogWrite(128) on a 0-255 scale -> 0.0-1.0 scale)
-motor_en.value = 128 / 255
-
-print("Encoder counter started")
-print("Motor running")
+last_count = 0
+last_time = time.monotonic()
 
 try:
     while True:
-        time.sleep(0.5)
-        with count_lock:
-            count = encoder_count
-        print(f"Encoder count: {count}")
+        ser.write(run_message.encode())
+        ser.flush()       
+        # encoder.steps tracks the position (increases or decreases)
+        # print(f"Pulses: {encoder.steps}")
+        # time.sleep(0.1)
+
+        count = encoder.steps
+
+        now = time.monotonic()
+        dt = now - last_time
+        delta = count - last_count
+        rpm = (delta / PULSES_PER_REV) / (dt / 60)
+        last_count = count
+        last_time = now
+
+        print(f"Encoder count: {count}  RPM: {rpm:.1f}")
+        time.sleep(0.1) 
+
 except KeyboardInterrupt:
-    pass
+    print("\nProgram stopped by user.")
+    encoder.close()
 finally:
-    motor_en.value = 0
-    motor_in1.off()
-    motor_in2.off()
+    ser.write(stop_message.encode())
+    ser.flush()
+    ser.close()
     print("\nStopped")
