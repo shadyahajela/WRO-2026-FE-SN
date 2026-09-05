@@ -7,7 +7,9 @@ import serial
 
 import numpy as np #where you store hue/color values
 
-from frames import Frame #define your color ranges and other frame-related functions
+from classes.motor_rpm_control import motor, encoder, controller #Required to have close-loop feedback loop control on the DC Motor
+
+from classes.frames import Frame #define your color ranges and other frame-related functions
 
 #get camera working
 from picamera2 import Picamera2
