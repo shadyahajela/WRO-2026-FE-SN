@@ -66,9 +66,9 @@ old_obstacle_is_green = None
 #WALL FOLLOWING VALUES (used only when no red/green obstacle is visible)
 wfx1, wfy1, wfx2, wfy2 = 0, 220, 640, 260   # small band - mirrors obstacle_challenge.py's no-obstacle default
 wf_gap_half_width = 100   # tune this - each gap edge sits this many pixels out from wall_frame's own center (recomputed in wall_follow() off wfx1)
-between_left_wall_offset = 150   # tune - artificial left wall = wall_frame.x1 + this, forced during BETWEEN
-wall_offset_cw = 1    # tune - CW hugs the right wall, so left_x is faked at wall_frame.x1 + this (ported from open_alex.py) - was 0, which pinned left_x to a hardcoded 0 and ignored real detection entirely
-wall_offset_ccw = 1   # tune - CCW hugs the left wall, so right_x is faked at wall_frame.x2 - this (ported from open_alex.py) - was 0, same issue mirrored on the right
+left_wall_offset = 1    # tune - nudges left_x (dynamic, with fallback to wall_frame.x1 when nothing is detected) -
+                         # used by CW (hugs the right wall) and by BETWEEN's CCW case (ported from open_alex.py) - was 0, which pinned left_x to a hardcoded 0 and ignored real detection entirely
+right_wall_offset = 1   # tune - mirror of left_wall_offset: nudges right_x, used by CCW (hugs the left wall) (ported from open_alex.py) - was 0, same issue mirrored on the right
 kp_wall = 0.3   # ported from open_alex.py's field-tuned value (was 0.3) - also affects BETWEEN, which shares this function
 kd_wall = 0.25   # ported from open_alex.py's field-tuned value (was 0.22)
 dead_zone_px = 20
@@ -94,15 +94,15 @@ CRITICAL_TURN = False
 CRITICAL_TURN_TIME = 3.0   # seconds the front-center-box check stays active once CRITICAL_TURN is triggered - tune on field
 CRITICAL_TURN_START = None
 
-#PARK TRIGGER BOX (BETWEEN+CCW only) - 50x50 in the bottom-right corner, watching for the magenta parking wall
-park_box_x1, park_box_y1, park_box_x2, park_box_y2 = 590, 260, 640, 310
-PARK_BOX_MAGENTA_PX = 1000   # tune on field
+#PARK TRIGGER BOX (BETWEEN+CCW only) - 20x20, right above wall_frame (wfy1=220), watching for the magenta parking wall
+park_box_x1, park_box_y1, park_box_x2, park_box_y2 = 580, 210, 600, 230
+PARK_BOX_MAGENTA_PX = 300   # tune on field
 
 #LAP COUNTING / DIRECTION VALUES
 CW = 0
-CCW = 0
+CCW = 1
 orangeLine = 0
-blueLine = 0 # SHADYA - Why is this 11?
+blueLine = 11 # SHADYA - Why is this 11?
 line_detected = False
 side_wall_missing = False   # set in STRAIGHT each frame - True when the hugged-side wall drops out of camera view (ported from open_challenge.py)
 start_time_line = time.time()
@@ -110,9 +110,10 @@ prev_frame_time = time.time()   # for FPS calculation
 
 LINES_STOP_DELAY = 2.0   # seconds to keep driving once lines reaches 12, before forcing a stop
 lines_stop_time = None   # set once, the first frame lines >= 12
+parking = None
 
 #TURNING VALUES (without its special-case colored-block handling)
-BLOCK_MIN_PIXELS = 650       # contour-area threshold for "obstacle seen" while turning
+BLOCK_MIN_PIXELS = 600       # contour-area threshold for "obstacle seen" while turning
 turn_delay = 0.1           # seconds to wait after a lap line is seen before actually turning
 turn_delay_time = None
 
@@ -120,16 +121,16 @@ turn_count = 0
 start_time_turn_count = time.time()   # debounce for turn_count, same 1.5s pattern as orangeLine/blueLine's start_time_line
 
 #IMU heading-based turning values (ported from open_alex.py's PD turn control) - one shared
-#kp_turn/kd_turn used everywhere heading-hold steering happens: TURNING, OBST_CRITICAL, BETWEEN
+#kp_turn/kd_turn used everywhere heading-hold steering happens: TURNING, PRE_APPROACH, BETWEEN
 TURN_ANGLE_TARGET = 90   # degrees to rotate (IMU heading) before exiting TURNING
 target_heading = 0   # absolute target heading for the current turn, set to turn_count*90 (CW) or -turn_count*90 (CCW) on entering TURNING - starts at 0 (not None) so the new unconditional heading_error computation has a target before the first turn
 
 kp_turn = 1.5
 kd_turn = 0.45
 
-#derivative-tracking state for OBST_CRITICAL's/BETWEEN's target_heading+/-90 turn_error cases
+#derivative-tracking state for PRE_APPROACH's/BETWEEN's target_heading+/-90 turn_error cases
 #(their own target differs from target_heading, so they can't share previous_heading_error) -
-#reset to None whenever OBST_CRITICAL/BETWEEN is freshly entered or the target shifts phase
+#reset to None whenever PRE_APPROACH/BETWEEN is freshly entered or the target shifts phase
 previous_offset_turn_error = None
 
 #SENSOR FUSION WEIGHTS (ported from open_alex.py) - blend of IMU heading control vs camera
@@ -162,11 +163,11 @@ OBSTACLE = 2   # sees a red or green obstacle - avoidance steering
 TURNING = 3    # executing a turn at a lap line
 BETWEEN = 4    # entered only by finishing a WAIT/FORCE sequence while lines is 11 or 12 - CCW does what STRAIGHT does (blocks treated as red, else wall-follow), CW goes straight to PARK
 PARK = 5       # CW after 12 lines - stopjn m
-OBST_CRITICAL = 6   # saw the "wrong side" block early - drive nearly straight until the center frame fills with black, then force a hard turn for a fixed duration before handing back to normal driving
+PRE_APPROACH = 6   # saw the "wrong side" block early - drive nearly straight until the center frame fills with black, then force a hard turn for a fixed duration before handing back to normal driving
 state = STRAIGHT
 
 STATE_NAMES = {LEAVE: "LEAVE", STRAIGHT: "STRAIGHT", OBSTACLE: "OBSTACLE", TURNING: "TURNING",
-               BETWEEN: "BETWEEN", PARK: "PARK", OBST_CRITICAL: "OBST_CRITICAL"}
+               BETWEEN: "BETWEEN", PARK: "PARK", PRE_APPROACH: "PRE_APPROACH"}
 
 #Last sent message sent to serial to compare against current message to avoid sending duplicates
 last_message = ""
@@ -204,17 +205,16 @@ def wall_follow(image, image_source):
     wall_frame = Frame(wfx1, wfy1, wfx2, wfy2, image, wall_low, wall_high, frameColor=(255,0,0), leftZoneX=gap_left_x, rightZoneX=gap_right_x, source=image_source)
     left_x, right_x, wall_mask, scan_y1, scan_y2 = wall_frame.getInnerEdgesSplit(color=wall_idx, col_threshold=20, contourColor=(255,255,255))
 
-    if state == BETWEEN:
-        #BETWEEN: pretend there's a wall at a fixed offset from wall_frame's own x1, regardless of what's actually detected
-        left_x = wall_frame.x1 + between_left_wall_offset
-    elif CW:
-        #CW: nudge the left wall position by a fixed offset - uses the REAL detected value when
+    if CW or (state == BETWEEN and CCW):
+        #CW nudges the left wall position by a fixed offset - uses the REAL detected value when
         #available (stays dynamic to whatever the camera sees), falling back to the frame's own
-        #edge only when nothing is detected at all - the offset is always applied either way (ported from open_alex.py)
-        left_x = (left_x if left_x is not None else wall_frame.x1) + wall_offset_cw
+        #edge only when nothing is detected at all - the offset is always applied either way
+        #(ported from open_alex.py). BETWEEN's CCW case reuses the same left-side logic instead of
+        #a fixed offset from wall_frame.x1
+        left_x = (left_x if left_x is not None else wall_frame.x1) + left_wall_offset
     elif CCW:
         #CCW: mirror of the above - nudge the right wall position (ported from open_alex.py)
-        right_x = (right_x if right_x is not None else wall_frame.x2) - wall_offset_ccw
+        right_x = (right_x if right_x is not None else wall_frame.x2) - right_wall_offset
 
     mid_y = (scan_y1 + scan_y2) // 2
     if left_x is not None:
@@ -380,8 +380,10 @@ while True:
 
     #start the stop timer the first frame lines reaches 12 - LINES_STOP_DELAY seconds later,
     #speed is forced to 0 regardless of state (see the override near message-building below)
-    if (lines >= 12) and (lines_stop_time is None):
-        lines_stop_time = time.time()
+    if parking is None:
+        if (lines >= 12) and (lines_stop_time is None):
+            state = PRE_APPROACH
+            parking = True
 
     #decide CW or CCW from whichever lap-line color is seen first
     if (CW == 0) and (CCW == 0):
@@ -466,9 +468,12 @@ while True:
     early_bluePx = early_line_frame.getContour(0, contourColor=(255,85,0))
     early_orangePx = early_line_frame.getContour(1, contourColor=(0,128,255))
 
-    if line_detected:
+    if line_detected and (state != PRE_APPROACH):
         #a lap line was seen AND the hugged-side wall has dropped out of view (ported from
-        #open_challenge.py) - hold the current steering and wait turn_delay seconds before turning
+        #open_challenge.py) - hold the current steering and wait turn_delay seconds before turning.
+        #excludes PRE_APPROACH - this runs before the state dispatch below and would otherwise be
+        #able to yank state to TURNING out from under it; PRE_APPROACH may only be exited by its
+        #own internal logic (to STRAIGHT or BETWEEN)
         if turn_delay_time is None:
             turn_delay_time = time.time()
         if time.time() - turn_delay_time > turn_delay:
@@ -512,15 +517,15 @@ while True:
         else:
             #done leaving - check for a block needing WAIT/FORCE treatment before handing off to normal driving
             if CW and (redPx > BLOCK_MIN_PIXELS):
-                # state = OBST_CRITICAL
                 block_force_turn_start = None
                 left_parking = True
                 state = OBSTACLE
+                CRITICAL_TURN  = True
             elif CCW and (greenPx > BLOCK_MIN_PIXELS):
-                # state = OBST_CRITICAL
                 block_force_turn_start = None
                 left_parking = True
                 state = OBSTACLE
+                CRITICAL_TURN  = True
             else:
                 state = OBSTACLE   # placeholder - redispatched to STRAIGHT/OBSTACLE/BETWEEN next frame
             leave_start_time = None
@@ -535,7 +540,7 @@ while True:
 
         else:
             #PD heading-hold, ported from open_alex.py's TURNING state - shares kp_turn/kd_turn
-            #with OBST_CRITICAL/BETWEEN's own PD turn_error handling. Pure IMU, no camera term:
+            #with PRE_APPROACH/BETWEEN's own PD turn_error handling. Pure IMU, no camera term:
             #wall_follow() only runs in STRAIGHT, so there's no steering_cam to blend in here
             turned_enough = abs(heading_error) <= 35   # loose exit (was <=2) - remainder corrected by STRAIGHT's post-turn settle blend
 
@@ -560,17 +565,21 @@ while True:
             #center added exactly once here (ported from open_alex.py) - no camera term to blend
             steering_value = center + round(steering_imu)
 
-    elif state == OBST_CRITICAL:
+    elif state == PRE_APPROACH:
+        #pure IMU, no camera term - STRAIGHT recomputes its own IMU_WEIGHT/CAM_WEIGHT fresh every
+        #frame from turn_exit_time, so this reverts to normal automatically once PRE_APPROACH exits
+
         #saw the "wrong side" block early - keep going nearly straight until the center frame fills with black
         turn_error = (((target_heading - 90 if CW else target_heading + 90)  - heading + 180) % 360) - 180
+
         if previous_offset_turn_error is None:
             previous_offset_turn_error = turn_error
         derivative_offset_turn_error = turn_error - previous_offset_turn_error
         previous_offset_turn_error = turn_error
-        steering_value = center + turn_error * kp_turn + derivative_offset_turn_error * kd_turn
+        steering_value = center + round(turn_error * kp_turn + derivative_offset_turn_error * kd_turn)
         turned_enough = abs(turn_error) <= 2
 
-        center_frame = Frame(315, 190, 325, 200, image, [lowBlack], [highBlack], frameColor=(0,255,255), source=image_source)
+        center_frame = Frame(315, 200, 325, 210, image, [lowBlack], [highBlack], frameColor=(0,255,255), source=image_source)
         centerBlackPx = center_frame.getContour(0, contourColor=(0,255,0))
 
         if centerBlackPx >= CENTER_BLACK_FULL_PX:
@@ -578,46 +587,32 @@ while True:
             block_force_turn_start = time.time()
 
         if block_force_turn_start is not None:
-            #forcing phase: hard turn for a fixed duration, then hand back to normal driving -
-            #reversed direction only for the one-time WAIT/FORCE triggered right after LEAVE
-            if left_parking:
-                turn_error = (((target_heading + 90 if CW else target_heading - 90)  - heading + 180) % 360) - 180
-                if previous_offset_turn_error is None:
-                    previous_offset_turn_error = turn_error
-                derivative_offset_turn_error = turn_error - previous_offset_turn_error
-                previous_offset_turn_error = turn_error
-                steering_value = center + turn_error * kp_turn + derivative_offset_turn_error * kd_turn
-                turned_enough = abs(turn_error) <= 2
-            else:
-                #same target as the module-level heading_error - reuse the already PD-damped steering_imu
-                turn_error = heading_error
-                steering_value = center + steering_imu
-                turned_enough = abs(turn_error) <= 2
+            #forcing phase: hard turn for a fixed duration, then hand back to normal driving
+            #same target as the module-level heading_error - reuse the already PD-damped steering_imu
+            turn_error = heading_error
+            steering_value = center + round(steering_imu)
+            turned_enough = abs(turn_error) <= 2
 
-                if turned_enough: #if the heading has rotated the target angle, go back to straight mode
-                    state = STRAIGHT
-                    line_detected = False
-                    # frontBlack_detected = False
-                    side_wall_missing = False
-                    previous_error_wall = None
-                    previous_heading_error = None
-                    turn_delay_time = None
-                    print("EXIT TURN")
+            if turned_enough: #if the heading has rotated the target angle, go back to straight mode
+                state = STRAIGHT
+                line_detected = False
+                # frontBlack_detected = False
+                side_wall_missing = False
+                previous_error_wall = None
+                previous_heading_error = None
+                turn_delay_time = None
+                print("EXIT TURN")
 
             if time.time() - block_force_turn_start > block_force_turn_time:
                 #lines has no bearing on BETWEEN anywhere else - this is the ONLY way in: finishing
                 #this WAIT/FORCE sequence once lines has reached 12 (it may have ticked over
                 #mid-maneuver, since lap-line detection runs every frame regardless of state)
-
-                #SHADYA: How can it enter BETWEEN state right after OBST_CRITICAL, Formerly WAIT
-                if lines >= 12:
-                    state = BETWEEN
-                else:
-                    state = OBSTACLE   # placeholder - redispatched to STRAIGHT/OBSTACLE next frame
+                state = BETWEEN
+                #reset, same as the turned_enough->STRAIGHT exit above - otherwise a stale True
+                #here would hijack BETWEEN into TURNING on the very next frame (line_detected is
+                #no longer guarded once state != PRE_APPROACH)
                 line_detected = False
                 turn_delay_time = None
-                left_parking = False   # one-time reversed steering used - never apply it again
-                block_force_turn_start = None   # reset for the next WAIT cycle
 
 
     elif state == BETWEEN:
@@ -633,14 +628,12 @@ while True:
             if park_box_px >= PARK_BOX_MAGENTA_PX:
                 state = PARK
             else:
-                # steering_value = wall_follow(image, image_source)
-                turn_error = (((target_heading + 90 if CW else target_heading - 90)  - heading + 180) % 360) - 180
-                if previous_offset_turn_error is None:
-                    previous_offset_turn_error = turn_error
-                derivative_offset_turn_error = turn_error - previous_offset_turn_error
-                previous_offset_turn_error = turn_error
-                steering_value = center + turn_error * kp_turn + derivative_offset_turn_error * kd_turn
-                turned_enough = abs(turn_error) <= 2
+                #wall_follow's own BETWEEN+CCW case nudges left_x using left_wall_offset (same
+                #dynamic logic CW uses), fused with the module-level IMU heading-hold signal
+                #exactly like STRAIGHT does in open_challenge.py
+                left_wall_offset = 50
+                steering_cam, left_x, right_x = wall_follow(image, image_source)
+                steering_value = center + round(IMU_WEIGHT * steering_imu + CAM_WEIGHT * steering_cam)
 
     elif (early_orangePx > EARLY_LINE_MIN_PX) or (early_bluePx > EARLY_LINE_MIN_PX):
         #decide CW/CCW here too, before target_heading needs it below - the early zone sees the
@@ -665,24 +658,21 @@ while True:
         if CW and (early_orangePx > EARLY_LINE_MIN_PX) and (greenPx > BLOCK_MIN_PIXELS):
             #early sighting of a green block near a CW turn - the "wrong side" case (or, at lines>=12, forced regardless of any block)
             print("wait green")
-            # state = OBST_CRITICAL
             block_force_turn_start = None
             CRITICAL_TURN = True
 
         elif CCW and (early_bluePx > EARLY_LINE_MIN_PX) and (redPx > BLOCK_MIN_PIXELS):
-            #early sighting of a red block near a CCW turn - the "wrong side" case (or, at lines>=12, forced regardless of any block)
+            #early sighting of a red block near a CCW turn - t_crithe "wrong side" case (or, at lines>=12, forced regardless of any block)
             print("wait red")
-            # state = OBST_CRITICAL
             block_force_turn_start = None
-            CRITICAL_TURN = True
-
+            CRITICAL_TURN = True 
     else:
         turn_delay_time = None
 
         #decide OBSTACLE vs STRAIGHT fresh every frame based on whether a usable obstacle angle
         #came back this frame (ported choose_output_angle() fallback rule: fall back to
         #wall-following whenever there's no obstacle angle), then dispatch by state - matches how
-        #every other state (PARK/LEAVE/TURNING/OBST_CRITICAL/BETWEEN) is identified above
+        #every other state (PARK/LEAVE/TURNING/PRE_APPROACH/BETWEEN) is identified above
         if steering_value_obstacle is not None:
             state = OBSTACLE
         else:
@@ -719,8 +709,8 @@ while True:
             steering_value = center + round(IMU_WEIGHT * steering_imu + CAM_WEIGHT * steering_cam)
             print(f"STR STEER {steering_value}")
 
-    #skipped once parked
-    if state != PARK:
+    #skipped once parked, between, or in PRE_APPROACH
+    if state not in (PARK, BETWEEN, PRE_APPROACH):
         if CRITICAL_TURN:
             #front-center box only, for a fixed window after CRITICAL_TURN triggers - if it
             #fills with black, nudge steering toward the turn direction (CW right, CCW left)
@@ -733,14 +723,24 @@ while True:
             front_center_px = sum(cv2.contourArea(c) for c in front_center_contours)
 
             if front_center_px >= FRONT_CENTER_FULL_PX:
-                if CW:
-                    steering_value += FRONT_CENTER_STEER_NUDGE
-                elif CCW:
-                    steering_value -= FRONT_CENTER_STEER_NUDGE
+                #left_parking reverses the nudge direction, same as it does for PRE_APPROACH's
+                #forcing-phase turn_error - leaving parking already points the robot toward the
+                #first turn, so the usual CW-right/CCW-left nudge would be backwards here
+                if left_parking:
+                    if CW:
+                        steering_value -= FRONT_CENTER_STEER_NUDGE
+                    elif CCW:
+                        steering_value += FRONT_CENTER_STEER_NUDGE
+                else:
+                    if CW:
+                        steering_value += FRONT_CENTER_STEER_NUDGE
+                    elif CCW:
+                        steering_value -= FRONT_CENTER_STEER_NUDGE
 
             if time.time() - CRITICAL_TURN_START > CRITICAL_TURN_TIME:
                 CRITICAL_TURN = False
                 CRITICAL_TURN_START = None
+                left_parking = False
 
         #if a corner frame is solidly black ("full"), nudge steering away from that side
         right_full = (tr1Px >= CORNER_FULL_PX) and (tr2Px >= CORNER_FULL_PX)
