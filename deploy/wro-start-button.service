@@ -1,0 +1,15 @@
+[Unit]
+Description=WRO start-button listener (launches open_challenge.py on button press)
+After=multi-user.target
+
+[Service]
+Type=simple
+User=rpi5-ajax6
+Environment=PYTHONUNBUFFERED=1
+WorkingDirectory=/home/rpi5-ajax6/Documents/WRO-2026-FE-SN/src
+ExecStart=/usr/bin/python3 /home/rpi5-ajax6/Documents/WRO-2026-FE-SN/src/startup/start_listener.py
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
