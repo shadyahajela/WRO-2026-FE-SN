@@ -17,29 +17,33 @@ This repository contains engineering materials of a self-driven vehicle's model 
 
 We are Team Sub-Atomica, Niva, Jeevesh and Shadya. We are united by a passion for STEM, Electronics, coding and jalapeño poppers. We wanted to bring our jouney to many others with the same passions and inspire teenagers around the world. To us its more than just coding or building, its the experiences and connections along the way.
 
+<img width="330" height="248" alt="IMG_6842" src="https://github.com/user-attachments/assets/0a190bb5-6e52-40ad-af4f-699491a4c7ea" />
+<img width="330" height="248" alt="159C16BD-3B52-4F8A-85BE-AFA5FE405926 (1)" src="https://github.com/user-attachments/assets/3ceb7079-0236-4770-a4e8-5067800ad02a" />
+<img width="330" height="248" alt="IMG_6102 (1)" src="https://github.com/user-attachments/assets/dd9d688d-cd1b-44b3-93f7-74d6a8bdba7c" />
+
 ## Robot 
 
 Our robot is called Jadoo which means magic in Hindi. The name comes from a popular movie character who is also an alien and can do Jadoo. The drive base of our robot kind of looked like an alien head, so we named it after our favorite alien character.
+
+### Robot images
+<img width="300" height="408" alt="image" src="https://github.com/user-attachments/assets/af7561bf-10e8-4b97-ac37-556d9599feff" />
+<img width="300" height="408" alt="image" src="https://github.com/user-attachments/assets/259c8fb3-f92e-446a-88b5-39c5ec398d54" />
+<img width="300" height="408" alt="image" src="https://github.com/user-attachments/assets/0b135114-54b1-469a-9566-dff8d1d074bd" />
+<img width="300" height="408" alt="image" src="https://github.com/user-attachments/assets/321d071c-ed87-43dc-b66c-276058c2d453" />
+<img width="300" height="408" alt="image" src="https://github.com/user-attachments/assets/ce060441-80ed-43f7-803a-4352d1043b11" />
+<img width="300" height="408" alt="image" src="https://github.com/user-attachments/assets/6c13cf31-8b4d-4c99-8bdf-1608f29fbbc6" />
 
 **Dimensions**
 
   Width: 12 cm                     
   Length: 23 cm                    
   Height: 17 cm (Without wire)      
-          20 cm (With Camera wire)  
+          20 cm (With Cam0era wire)  
           
 The Width helps to get around tight areas and the height gives a low base with a more balanced center of gravity all while being easy to maneuver due to the length. 
 
-### Robot images
-_*Add at end*
 
-
-To build a self-driving car we need to build a car.
-
-Objectives:
-
-As per the rules, the car must have a steering mechanism and the rear axle driven by a motor.
-Our team also wanted the car to be stable and fast (and colorful if we can help it).
+</br>
 
 
 # 1. Mobility Management
@@ -52,7 +56,7 @@ As per the rules, the car must have a steering mechanism and the rear axle drive
 Our team also wanted the car to be stable and fast (and colorful if we can help it).
 
 ## 1.1 Drive System
-**Drive Motor:** JGA25-371 DC Motor with _____ encoder. MUST CALCULATE TORQUE (TO-DO)
+**Drive Motor:** JGA25-371 DC Motor with Hall-encoder. MUST CALCULATE TORQUE (TO-DO)
   <table>
   <tr>
     <td align="center" width="300" >
@@ -73,22 +77,20 @@ Our team also wanted the car to be stable and fast (and colorful if we can help 
 
  **Selection Reasoning** 
 
-Built-in encoder, allowing for precise movement and less wiring hassle.
-High torque for pushing the robot with vigor and avoiding stalling.
-The JGA25-371 motor was selected because it combines high torque with integrated encoder feedback, providing both the power and precision required for the WRO Future Engineers competition. The motor drives the rear wheels through a metal WLTOYS 144001 differential, which allows the robot to maintain smooth and balanced turns while reducing the difference in rotational speed between the left and right wheels. By distributing torque between both LEGO SPIKE Prime wheels, the differential minimizes wheel slip and improves stability during cornering. The integrated Hall encoder provides real-time feedback for closed-loop control, allowing the robot to accurately measure wheel rotation, regulate speed, and maintain consistent movement throughout each run. Unlike smaller motors, the JGA25-371 provides sufficient torque to support the drivetrain while maintaining reliable performance under varying loads. The combination of encoder feedback, the metal differential, and the SPIKE Prime wheels creates a drivetrain that balances power, stability, and precision, making it well-suited for the competition environment.*
++ Built-in encoder, allowing for precise movement and less wiring hassle.
++ High torque for pushing the robot with vigor and avoiding stalling.
+
+The JGA25-371 motor was selected because it combines high torque with integrated encoder feedback, providing both the power and precision required for the WRO Future Engineers competition. The 620 RPM gives enough torque to have a fast robot and have enough control for parking. We calculated torque required to pull our robot and to start it. Additionally the hall encoder provides real-time feedback for closed-loop control, allowing the robot to accurately measure wheel rotation, regulate speed, and maintain consistent movement especially during parking. 
+
+<img width="700" height="516" alt="image" src="https://github.com/user-attachments/assets/4a14070e-126d-4522-b77e-8ea55c50e8be" />
+
+*Image pinpoints exact location of torque calculations.(for full image look for Torque and speed reasoning)*
 <br/>
 
-***<Naga - Above is good enough. Perhaps convert to jot notes to clearly indicate the reasons it was selected. Primarily because the 620RPM would allow for quick laps around the circuit at full speed (fastest lap was 16 seconds) and the 0.22kg.cm torque allows to move our 800gm robot slow enough to achieve parking.The integrated Hall encoder provides real-time feedback for closed-loop control, allowing the robot to accurately measure wheel rotation, regulate speed, and maintain consistent movement especially during parking>***
-  
-  **Selection Reasoning:**
-  The JGA25-371 was selected for its high torque, compact size, reliability, and integrated Hall-effect encoder. Its torque provides sufficient force under varying loads while reducing the likelihood of stalling, and the encoder provides rotational feedback for precise movement. Compared with smaller motors, it adds some weight and increases the possibility of wheel slip, but we accepted this tradeoff because torque and controllability were more important to our drivetrain requirements.
+ **Considerations:**
+  An alternative would be a NEMA 17 stepper motor, which can provide precise speed and position control. However, the NEMA 17 is larger and heavier, and would require a more complex driver setup, making it less suitable for our robot. The JGA25-371 was chosen instead because it provides sufficient speed and torque while being more compact and easier to integrate.
 
-The motor drives the rear wheels through a metal WLTOYS 144001 differential, which distributes torque while allowing the left and right LEGO SPIKE Prime wheels to rotate at different speeds during turns. This reduces drivetrain binding and tire scrub while providing a durable connection capable of handling the motor's torque. The motor, differential, and wheels were therefore selected as one system to balance power, traction, and turning consistency.
-
-The encoder is integrated into the vehicle's closed-loop control system through the Arduino Nano and motor driver. It measures wheel rotation so the controller can regulate speed and distance, improving repeatability between runs and allowing the system to respond to changes in load. To manage risks such as wheel slip, mechanical backlash, and motor stress, motor acceleration and speed are controlled in software and the drivetrain is calibrated using encoder feedback. This integration allows the mechanical and software systems to work together to produce controlled and repeatable motion.
-
-  **Differential**
-*We used a metal WLTOYS 144001 differential in our robot, which allows the left and right rear wheels to rotate at different speeds while turning, reducing tire drag and improving turning efficiency. This setup provides smoother and more controlled cornering by distributing torque between both rear wheels and compensating for the difference in the distance each wheel travels during a turn. The differential improves maneuverability and stability, particularly during the obstacle challenge and parallel parking, where precise and repeatable movements are essential.*
+### Differential
 
 We used a metal WLTOYS 144001 differential in our robot, allowing the left and right rear wheels to rotate at different speeds during turns, reducing tire scrub and improving turning efficiency. This provides smoother cornering by distributing torque between both wheels and compensating for the different distances they travel. The differential improves maneuverability and stability during the Obstacle Challenge and parallel parking, where precise and repeatable movement is essential, while its metal construction provides durability under drivetrain loads.
   
@@ -114,21 +116,38 @@ We used a metal WLTOYS 144001 differential in our robot, allowing the left and r
 
   * Installed using an inset groove system in the chassis screwed to a detachable 3D-printed motor differential housing clamp that is placed above the differential gear compartment. This will allow for future changes to accommodate different motors and gears if the need arise.
 
-  IMAGE
+    <img width="325.5" height="434.5" alt="image" src="https://github.com/user-attachments/assets/ee7787bb-2744-43ed-9582-68ccc280698d" />
 
   * Wires connected to Arduino Nano and Motor Driver.
   * Spike Prime wheels fitted onto the LEGO motor axle.
 
 
-  **Considerations:**
-  An alternative would be a NEMA 17 stepper motor, which can provide precise speed and position control. However, the NEMA 17 is larger and heavier, and would require a more complex driver setup, making it less suitable for our robot. The JGA25-371 was chosen instead because it provides sufficient speed and torque while being more compact and easier to integrate.
   
 ## 1.2 Steering System
 
-**Steering:** Initially Parallel Steering, then changed to Ackermann Steering Geometry, prototyped with LEGO technic parts and later made with 3D printed parts.
-  insert images of prototypes
+**Steering:** Initially Parallel Steering, then changed to Ackermann Steering Geometry, prototyped with LEGO technic parts and later made with 3D printed parts. Ackermann was especially important for obstacle navigation and parking, where precise control and a small turning radius are essential. We also considered parallel steering because it was simpler to implement, but chose Ackermann as a calculated risk for its improved maneuverability. Our implementation uses a custom 3D-printed Ackermann steering mechanism, we used Onshape to experiment with different pivot points, linkage positions, and steering angles throughout the design process.
 
-**Steering Motor:** We chose the MG90S Micro Servo for precise steering and weight reduction. The compact size and PWM interface make the MG90S easy to integrate and control using the Arduino Nano. It provides sufficient torque to steer the front wheels accurately and responsively. Its fast response and metal gear construction provide reliable and stable steering during turns and lane changes. The MG90S is widely used in hobby robotics, making replacement parts, mounting hardware, and documentation readily available.
+Through 2 iterations, we shortened both rods and increased the length of the side rods to achieve a smaller turning radius while keeping the mechanism       compact. In our first iteration we made our tabs 2mm longer and the neck of the robot, this gave us a 15 degree increase in our turning radius. We also experimented with shortening the rods to make our wheels streamlined and finalized with 9.53cm for the long shaft and 8.5cm for the short one. A major constraint was the chassis neck, which limited the steering angle because the wheels could collide with it. We therefore cut part of the chassis around the steering area to provide sufficient clearance.
+
+**Calibration and Implementation:**
+To achieve accurate and consistent steering, we used a combination of CAD adjustments and physical testing:
+
+* Different servo positions, linkage lengths, and steering angles were tested in Onshape to determine the most suitable configuration.
+* The physical steering assembly was then tested by turning the wheels fully in both directions and checking for smooth, consistent movement.
+* Based on the test results, we modified the CAD model and repeated the process until the steering geometry provided the desired range of motion and wheel           alignment.
+* The final Onshape design was then used to produce the 3D-printed steering assembly.
+
+<img width="275" height="489" alt="IMG_4013" src="https://github.com/user-attachments/assets/f28c9ddb-460f-42f4-8379-5101067f59bd" />
+<img width="650" height="424" alt="image" src="https://github.com/user-attachments/assets/9caed275-5877-459d-ba2e-db10171e0d1b" />
+
+<img src="v-photos/ackerman steering.png" alt="Ackerman Steering">
+
+*This was an early prototype of the Ackerman Steering model before we added it to the first iteration of our Lego car chassis.*
+
+
+### Steering Motor
+
+We chose the MG90S Micro Servo for precise steering and weight reduction. The compact size and PWM interface make the MG90S easy to integrate and control using the Arduino Nano. It provides sufficient torque to steer the front wheels accurately and responsively. Its fast response and metal gear construction provide reliable and stable steering during turns and lane changes. The MG90S is widely used in hobby robotics, making replacement parts, mounting hardware, and documentation readily available. Additionally while testing it with our code for control we were able to make it work 90% of the time, upon investigating we found a fault with the power system in the testing module. 
 
   <table>
   <tr>
@@ -148,44 +167,13 @@ We used a metal WLTOYS 144001 differential in our robot, allowing the left and r
   </tr>
   </table>
 
-  **Selection Reasoning:**
 
-Although Ackerman geometry is more complex to implement, we believe its advantages are especially important for obstacle navigation and parking, where precise control and a small turning radius are essential. We also considered parallel steering because it was simpler to implement, but chose Ackermann as a calculated risk for its improved maneuverability.
-
-Our implementation uses a custom 3D-printed Ackermann steering mechanism, with the following key design considerations:
-We used Onshape to experiment with different pivot points, linkage positions, and steering angles throughout the design process.
-
-Through 2 iterations, we shortened both rods and increased the length of the side rods to achieve a higher turning radius while keeping the mechanism       compact. In our first iteration we made our tabs 2mm longer and the neck of the robot, this gave us a 15 degree increase in our turning radius. We also experimented with shortening the rods to make our wheels streamlined and finalized with 9.53cm for the long shaft and 8.5cm for the short one. 
-  
-A major constraint was the chassis neck, which limited the steering angle because the wheels could collide with it. We therefore cut part of the chassis around the steering area to provide sufficient clearance.
-
-Since achieving perfect Ackermann geometry at our robot's small scale is difficult, we focused on achieving a practical approximation with a wide steering angle, smooth turns, and minimal wheel slip.
-
-The MG90S servo horn and steering angles were adjusted directly in Onshape before 3D printing and physical testing to reduce the risk of overloading the servo or having the wheels contact the chassis.
-
-  
-
-
-<img src="v-photos/ackerman steering.png" alt="Ackerman Steering">
-
-*This was an early prototype of the Ackerman Steering model before we added it to the first iteration of our Lego car chassis.*
-
-*Although this steering geometry is more complex to implement, we believe its advantages are especially important for obstacle navigation and parking, where precise control and a small turning radius are essential. It allows the robot to maneuver smoothly and maintain accurate alignment in tighter spaces. Our implementation uses a custom 3D-printed Ackermann steering mechanism, with the following key design considerations: We used Onshape to experiment with different pivot points, linkage positions, and steering angles throughout the design process. Since achieving perfect Ackermann geometry at the robot's small scale is difficult, we aimed to closely approximate the ideal geometry through multiple design iterations. The MG90S servo horn and steering angles were adjusted directly in Onshape before 3D printing and physical testing.*
-  
-
-
-**Calibration and Implementation:**
-To achieve accurate and consistent steering, we used a combination of CAD adjustments and physical testing:
-* Different servo positions, linkage lengths, and steering angles were tested in Onshape to determine the most suitable configuration.
-* The physical steering assembly was then tested by turning the wheels fully in both directions and checking for smooth, consistent movement.
-* Based on the test results, we modified the CAD model and repeated the process until the steering geometry provided the desired range of motion and wheel alignment.
-* The final Onshape design was then used to produce the 3D-printed steering assembly.
 
 **Mounting:**
 
 * Screwed into a platform plate in front of the chassis, connected to the steering mechanism.
 
-image
+  <img width="579.5" height="434.5" alt="image" src="https://github.com/user-attachments/assets/e2cee4a4-7c77-436e-8802-3e7016e79ba2" />
 
 **Considerations:**
 An alternative would be the MG996R servo, which provides higher torque and more durable metal gears. However, it is larger and requires more power than the MG90S, which would require modifications to our chassis and power system. The MG90S was chosen instead because it is more compact and sufficient for our steering system.
@@ -225,7 +213,7 @@ Drawbacks:
 
 **Iteration 2: 3D Printed Parts and LEGO fusion:**
 
-IMAGE
+<img width="244.5" height="424.5" alt="image" src="https://github.com/user-attachments/assets/24dba292-0dd8-4a38-afa0-b5159013af0e" />
 
 Aspects achieved/retained:
 * Customizability of component mounting, such as custom in-built mounts for the IMU, DC Motor, etc.
@@ -241,7 +229,7 @@ Drawbacks:
 
 **Iteration 3: Fully 3D Printed Chassis:**
 
-IMAGE
+<img width="325.5" height="434.5" alt="image" src="https://github.com/user-attachments/assets/dfaddd8d-61b9-4028-ac8f-ad6805f09e88" />
 
 Aspects achieved/retained:
 * 3D printed camera mount allows for custom mounting; iteration testing resulted in us finding the optimal camera angle and height.
@@ -605,79 +593,4 @@ These files contain optimized slicing settings such as layer height, infill, sup
 bjsihgiwobwe
 
 
-# 8. Building Instructions
-
-Step 0: Print the 3D parts
-
-Before assembly, prepare the components listed above and print the 3D parts.
-
-<details>
-
-<summary> <b><span style="font-size:1.1em; background-color:#f2f2f2; padding:4px 8px; border-radius:5px;">Click here to show the 3D printed parts used in the building process</span></b></summary>
-
-</summary>
-
-| Part Name | Quantity |
-| ---------------------------- | -------- |
-| Axle Holder | 3 |
-| Back Wheel Axle | 2 |
-| Back Wheel Connector | 2 |
-| Back Wheel Stopper | 2 |
-| Chassis | 1 |
-| Front Cover | 1 |
-| Front Wheel Axle (Left) | 1 |
-| Front Wheel Axle (Right) | 1 |
-| Front Wheel Stopper | 2 |
-| Lidar Plate | 1 |
-| Motor Gear | 1 |
-| Motor Holder | 1 |
-| Motor Plate | 1 |
-| T-Bone Linkage (Bottom) | 1 |
-| T-Bone Linkage (Top) | 1 |
-| Transfer Linkage (Left) | 1 |
-| Transfer Linkage (Right) | 1 |
-| Wheel Linkage (Bottom Left) | 1 |
-| Wheel Linkage (Bottom Right) | 1 |
-| Wheel Linkage (Top Left) | 1 |
-| Wheel Linkage (Top Right) | 1 |
-
-</details>
-
-**Step 1: Assemble the steering system**
-
-  1. On the edges of the long ackermann steering rod, attach the left and right ackermann tabs with _______ inch VEX screws and lock nuts, positioned such that the tabs are curved inward.
-
-
-
-  2. Attach the short ackermann steering rod on the same plane as the long ackermann steering rod, with the same 2 screws and nuts.
-
-
-
-  3. Mount the long ackermann steering rod onto the front of the chassis using two ______ inch VEX screws and lock nuts, positioned such that the short ackermann rod is facing the back of the chassis and the ackermann tabs are on a lower plane than the long and short ackermann rods.
-
-
-
-  4. Attach the two steering LEGO Spike Prime wheels onto the outsides of the ackermann tabs using ________________ LEGO piece.
-
-
-
-  5. Mount the camera and servo mount onto the fixed long ackermann rod using __________ inch VEX screws and lock nuts.
-
-
-
-  6. Attatch the servo box mount using _____ (#) ___________ inch VEX screws and lock nuts, angled such that the servo hole is positioned over the remaining hole in the long ackermann rod. Remember to keep space under the box for the hexagonal ackermann rod.
-
-
-
-  7. Fit a _______ stud long LEGO axle into the servo-axle coupling. Thread the axle down through the servo box, through the hexagonal ackermann rod, and through the aforementioned hole. Use a _____ inch VEX screw and a lock nut to attach the other side of the hexagonal ackermann rod to the hole in the middle of the short ackermann rod.
-
-
-  8. Screw in the MG90S servo into the servo box using a ______ M2 screw, with the servo fitted into the servo-axle coupling (MAKE SURE: before you fit the servo, the steering is straight, and the servo angle is 90 degrees. If by human error it is not at 90 degrees, use the servo calibration code provided here (LINK) to figure out the degree at which the servo is straight, which you can change in the main code.
-
-
-
-**Step 2: Assemble the drivetrain and chassis body**
-
-**Step 3: Mount electronics**
-
-**Step 4: Upload the software**
+<img width="231.8" height="173.8" alt="image" src="https://github.com/user-attachments/assets/569a3b1b-590f-43e3-8801-bdd882edcaa9" />
