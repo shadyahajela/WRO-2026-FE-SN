@@ -539,54 +539,49 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
 
 # 7. 3D Model Files
 
-## 7.1 Onshape CAD Files
+## 7.1 Onshape CAD
 
 We used Onshape to design the 3D models used to make the robot. The files can be found here (hyperlink).
-
-* Assembly Files (hyperlink) - contains the full robot assembly including the part placements.
-* Individual Parts (hyperlink) - includes each 3D component separately.
 
 ## 7.2 STL Files
 
 **Chassis and Core Structure**
 
-* Main chassis (link)
+- [`BasePlateV8.stl`](mech/3D_CAD_Files/BasePlateV8.stl)
 
 **Steering Linkages**
 
-* Ackermann Steering Long Rod (link)
-* Ackermann Steering Short Rod (link)
-* Ackermann Steering Left Tab (link)
-* Ackermann Steering Right Tab (link)
-* Ackermann Steering Hexagonal Rod (link)
+- [`AckermannLRodV3.stl`](mech/3D_CAD_Files/AckermannLRodV3.stl)
+- [`AckermannSRodV2.stl`](mech/3D_CAD_Files/AckermannSRodV2.stl)
+- [`DirectionTabsLH.stl`](mech/3D_CAD_Files/DirectionTabsLH.stl)
+- [`DirectionTabsRH.stl`](mech/3D_CAD_Files/DirectionTabsRH.stl)
+- [`AckermannHexaRod.stl`](mech/3D_CAD_Files/AckermannHexaRod.stl)
 
 **Motor and Transmission**
 
-* Differential Housing (link)
+- [`DifferentialHousingV4.stl`](mech/3D_CAD_Files/DifferentialHousingV4.stl)
 
 **Wheel and Axle Components**
 
-* Axle Spacer (link)
+- [`Axle Spacer.stl`](mech/3D_CAD_Files/Axle_Spacer.stl)
 
 **Mounting Components**
 
-* Camera and Servo Mount (link)
-* Middle Mount Plate (link)
-* Raspberry Pi Mount Plate (link)
+- [`CameraMountV3.stl`](mech/3D_CAD_Files/CameraMountV3.stl)
+- [`MidPlateV2.stl`](mech/3D_CAD_Files/MidPlateV2.stl)
+- [`PiPlateV3.stl`](mech/3D_CAD_Files/PiPlateV3.stl)
 * Servo Box Mount (link)
 
 **Coupling Parts**
 
-* Motor-Differential Coupling (link)
-* Differential-Axle Coupling (link)
+- [`MotorDifferentialCoupling.stl`](mech/3D_CAD_Files/MotorDifferentialCoupling.stl)
+- [`DifferentialAxleCoupling.stl`](mech/3D_CAD_Files/DifferentialAxleCoupling.stl)
+* Servo-Axle Coupling (link)
 
 **Miscellaneous**
 
-* Guide Arrow (link)
+- [`GuideArrowV3.stl`](mech/3D_CAD_Files/GuideArrowV3.stl)
+- [`Battery_Holder.stl`](mech/3D_CAD_Files/Battery_Holder.stl)
 
-## 7.3 Slicer Files
-
-All slicer project files (.3mf) used for printing the robot’s components can be found here.
-These files contain optimized slicing settings such as layer height, infill, support, and print orientation for each part.
 pz\z
 <img width="231.8" height="173.8" alt="image" src="https://github.com/user-attachments/assets/569a3b1b-590f-43e3-8801-bdd882edcaa9" />
