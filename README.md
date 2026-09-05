@@ -56,7 +56,7 @@ As per the rules, the car must have a steering mechanism and the rear axle drive
 Our team also wanted the car to be stable and fast (and colorful if we can help it).
 
 ## 1.1 Drive System
-**Drive Motor:** JGA25-371 DC Motor with Hall-encoder. MUST CALCULATE TORQUE (TO-DO)
+**Drive Motor:** JGA25-371 DC Motor with Hall-encoder. 
   <table>
   <tr>
     <td align="center" width="300" >
@@ -66,7 +66,7 @@ Our team also wanted the car to be stable and fast (and colorful if we can help 
       <h3>Specifications:</h3>
       <ul>
         <li>Voltage: 12V </li>
-        <li>No-load Speed: 126??????RPM </li>
+        <li>No-load Speed: 620RPM </li>
         <li>Stall Torque: 4.2kg/cm</li>
         <li>Current: 0.046A</li>
         <li>Gear Ratio: 21.3:1</li>
@@ -180,7 +180,6 @@ An alternative would be the MG996R servo, which provides higher torque and more 
 
 ## 1.3 Chassis Design
 
-isometric image of chassis
 
 | Dimension | Value (mm) | Reason |
 | ----------- | ----------- | -------------------------------------------- |
@@ -220,7 +219,7 @@ Aspects achieved/retained:
 * Expanded range of movement for newly 3D printed Ackermann steering system, allowing turns up to 55 degrees to either side.
 * Improved tolerances and a switch from LEGO to metal differential remove the grinding in the read drive system.
 * Optimized component layout for maximum space usage and minimal drag-creating parts.
-* 
+  
 
 Drawbacks:
 * LEGO camera mount restrains pinpoint mount changes to find optimal camera angle.
@@ -241,19 +240,19 @@ Aspects achieved/retained:
 
 Accepted Trade-Offs:
 * Overall shape of the robot is not streamlined and produces drag, but minimal enough that it barely affects performance.
-* 
+* Minimal space for wire management, wires don't affect functions of the robot so its accepted.
 
-**Layout:**
-guewgbrig
 
-Our robot chassis was completely custom-designed in FreeCAD and 3D printed using esun PLA+, which we found is easy to print with, offering a smoother texture and less warping compared to ABS, while also being lightweight and durable. Alongside the main chassis, the drivetrain and steering modules are mounted on our 3D-printed detachable plates that were fine-tuned during testing to achieve the correct alignment with other components. Other components, such as motor clamps and sensor brackets, are designed as independent printable components. The chassis was also designed with modularity in mind for replacements and upgrades, with reduced overhangs for printing ease. (PARAPHRASE)
+Our chassis was designed on Onshape and printed using Carbon fiber, as it is light and resistant to snapping, which helps in thin and high tension areas like the neck of our robot. Other than the chassis itself the other 3D printed components use PLA and are designed on Onshape as well.
+
+
 
 # 2. Power Systems and Architecture
 
 For the car to know what its doing, we need input and power.
 
 Objective: 
-  - Incorporate camera sensor
+  - Incorporate camera sensor and IMU
   - Create power system architecture for robot
 
 
@@ -286,7 +285,7 @@ The power system is essential to the robot’s ability to operate reliably throu
 
   The Raspberry Pi 5 serves as the vehicle’s main processing unit and requires a stable 5V supply. The step-down converter provides the required regulated voltage, ensuring that the Raspberry Pi and other electronics receive consistent power during operation. This setup allows the robot to run its sensors, process camera data, control the motors, and make navigation decisions without relying on separate batteries for each subsystem.
 
-  IMAGE OF BATTERY ON ROBOT
+
 
   **Motor Driver:** L298N
   
@@ -589,8 +588,5 @@ We used Onshape to design the 3D models used to make the robot. The files can be
 
 All slicer project files (.3mf) used for printing the robot’s components can be found here.
 These files contain optimized slicing settings such as layer height, infill, support, and print orientation for each part.
-
-bjsihgiwobwe
-
-
+pz\z
 <img width="231.8" height="173.8" alt="image" src="https://github.com/user-attachments/assets/569a3b1b-590f-43e3-8801-bdd882edcaa9" />
