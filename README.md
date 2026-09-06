@@ -149,7 +149,7 @@ To achieve accurate and consistent steering, we used a combination of CAD adjust
 
 <img width="275" height="489" alt="IMG_4013" src="https://github.com/user-attachments/assets/f28c9ddb-460f-42f4-8379-5101067f59bd" />
 <img width="650" height="424" alt="image" src="https://github.com/user-attachments/assets/9caed275-5877-459d-ba2e-db10171e0d1b" />
-<img src="v-photos/ackerman steering.png" alt="Ackerman Steering">
+<img width="1354" height="491" alt="image" src="https://github.com/user-attachments/assets/d49af80e-b820-4053-83cf-8057a6c45917" />
 
 *This was an early prototype of the Ackerman Steering model before we added it to the first iteration of our Lego car chassis.*
 
@@ -196,7 +196,7 @@ An alternative would be the MG996R servo, which provides higher torque and more 
 | Length | 230 | Tight turns and component fit |
 | Height | 200 | (Including camera wire) |
 
-**Design Overview:**
+### Design Overview:
 
 **Iteration 1: LEGO**
 
@@ -293,9 +293,8 @@ Objective:
 
 The power system is essential to the robot’s ability to operate reliably throughout the competition. Our robot is powered by a 3-cell (3S) Lithium Polymer (LiPo) battery. The battery provides a nominal voltage of 11.1 V and a fully charged voltage of 12.6 V. Its high discharge capability allows it to supply sufficient current to the motors and other components. The battery’s high energy density provides a good balance between runtime, weight, and available power, making it well suited for a mobile competition robot. A rocker switch is connected directly to the power source independent of the code to switch on and off the robot. 
 
-The JGA25-371 motors operate from the 12V supply provided by the battery, while the L298N motor driver regulates the power delivered to the motors based on commands from the Arduino Nano. The higher voltage of the 3S battery allows the motors to operate without requiring a step-up converter, simplifying the power system and reducing unnecessary conversion losses. A step-down converter is used to reduce the battery voltage to the appropriate levels required by the Raspberry Pi 5, Arduino Nano, camera, IMU, and other electronics. This separates the high-current motor supply from the lower-voltage electronics while allowing the entire robot to be powered from a single battery.
+The JGA25-371 motor operate from the 12V supply provided by the battery, while the L298N motor driver regulates the power delivered to the motors based on commands from the Arduino Nano. The higher voltage of the 3S battery allows the motors to operate without requiring a step-up converter, simplifying the power system and reducing unnecessary conversion losses. A step-down converter is used to reduce the battery voltage to the appropriate levels required by the Raspberry Pi 5, Arduino Nano, camera, IMU, and other electronics. This separates the high-current motor supply from the lower-voltage electronics while allowing the entire robot to be powered from a single battery.
 
-The Raspberry Pi 5 serves as the vehicle’s main processing unit and requires a stable 5V supply. The step-down converter provides the required regulated voltage, ensuring that the Raspberry Pi and other electronics receive consistent power during operation. This setup allows the robot to run its sensors, process camera data, control the motors, and make navigation decisions without relying on separate batteries for each subsystem.
 
 **Motor Driver:** L298N
   
@@ -318,7 +317,7 @@ The Raspberry Pi 5 serves as the vehicle’s main processing unit and requires a
   </tr>
   </table>
 
-We chose the L298N motor driver because it provides reliable control of our JGA25-371 DC motors while being compatible with the Arduino Nano. It supports the 12V supply from our 3-cell LiPo battery and allows the Arduino to control motor direction and speed through its PWM inputs. This provides a simple and reliable connection between the robot’s power system and drivetrain, making it well suited for our differential drive system. The driver has a voltage drop in its internal transistors which causes us to not achieve its full potential, but we were willing to make a trade-off as we were content with what we were able to use it for.  
+We chose the L298N motor driver because it provides reliable control of our JGA25-371 DC motor while being compatible with the Arduino Nano. It supports the 12V supply from our 3-cell LiPo battery and allows the Arduino to control motor direction and speed through its PWM inputs. This provides a simple and reliable connection between the robot’s power system and drivetrain, making it well suited for our differential drive system. The driver has a voltage drop in its internal transistors which causes us to not achieve its full potential, but we were willing to make a trade-off as we were content with what we were able to use it for.  
 
 
 OLD MOTOR DRIVER IMAGE: DRV8871
@@ -448,16 +447,22 @@ Using the Raspberry Pi 5 reduces the risk of processing bottlenecks affecting na
     </td>
   </tr>
   </table>
+  
+*Subsystem Integration:* 
 
-+ The Arduino Nano was selected as the robot’s low-level controller to handle time-sensitive tasks such as motor control, steering, and encoder/sensor input. This architecture separates high-level decision-making from low-level control, allowing the Raspberry Pi 5 to focus on vision processing, navigation, and path planning while the Arduino maintains consistent motor and steering responses.
+ The Arduino Nano was selected as the robot’s low-level controller to handle time-sensitive tasks such as motor control, steering, and encoder/sensor input. This architecture separates high-level decision-making from low-level control, allowing the Raspberry Pi 5 to focus on vision processing, navigation, and path planning while the Arduino maintains consistent motor and steering responses.
 
-+ The Arduino Nano communicates with the Raspberry Pi 5 through a serial connection, creating a modular hardware and software architecture. This reduced the risk of timing conflicts caused by running motor-control tasks alongside computationally intensive processes on the Raspberry Pi. It also allows each subsystem to be tested independently, making troubleshooting and future modifications easier. It also displays steering values on the 1.12" OLED screen, we use it for understanding what the robot is thinking and troubleshoot. 
+*Hardware and Software Architecture:*
 
-+ Our initial design used a microbit, but research showed that the Arduino Nano offered greater flexibility for external hardware and simpler bidirectional communication with the Raspberry Pi 5. We therefore changed to the Arduino Nano, trading the microbit’s built-in buttons and LEDs for improved subsystem integration and expandability.
+The Arduino Nano communicates with the Raspberry Pi 5 through a serial connection, creating a modular hardware and software architecture. This reduced the risk of timing conflicts caused by running motor-control tasks alongside computationally intensive processes on the Raspberry Pi. It also allows each subsystem to be tested independently, making troubleshooting and future modifications easier. It also displays steering values on the 1.12" OLED screen, we use it for understanding what the robot is thinking and troubleshoot. 
 
-+ The control system was then iteratively tested and adjusted to improve motor response, steering accuracy, and communication reliability. Using a dedicated microcontroller introduced additional hardware and communication complexity, but provided more predictable real-time control and reduced the dependence of critical drivetrain functions on the Raspberry Pi’s processing workload.
+*Iterations and Trade-Offs:*
 
-+ This subsystem architecture improves reliability by isolating critical low-level control from higher-level software. If the vision or navigation software requires significant processing, the Arduino can continue executing motor and steering commands without relying on continuous high-level computation. This separation therefore supports more consistent movement and provides a more robust architecture for the challenges defined by WRO Future Engineers.
+Our initial design used a microbit, but research showed that the Arduino Nano offered greater flexibility for external hardware and simpler bidirectional communication with the Raspberry Pi 5. We therefore changed to the Arduino Nano, trading the microbit’s built-in buttons and LEDs for improved subsystem integration and expandability. The control system was then iteratively tested and adjusted to improve motor response, steering accuracy, and communication reliability. Using a dedicated microcontroller introduced additional hardware and communication complexity, but provided more predictable real-time control and reduced the dependence of critical drivetrain functions on the Raspberry Pi’s processing workload.
+
+*Risk Analysis and Reliability:*
+
+This subsystem architecture improves reliability by isolating critical low-level control from higher-level software. If the vision or navigation software requires significant processing, the Arduino can continue executing motor and steering commands without relying on continuous high-level computation. This separation therefore supports more consistent movement and provides a more robust architecture for the challenges defined by WRO Future Engineers.
 
 
 **Expansion Board:** Arduino Nano Shield
