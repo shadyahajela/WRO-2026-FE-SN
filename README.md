@@ -511,9 +511,242 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
 
 # 3. Software Architecture
 
-# 4. Source Code
+## Code Origins
 
-# 5. List of Components
+Since a lot of these concepts were new to us, our coding journey had humble origins
+
+1. Started with just a raspberry pi and a camera to detect walls and objects
+2. Added proportional steering angle calculation to drive a virtual servo
+3. Had a Micro\:bit microcontroller connected to the Raspberry Pi over USB for serial connection, and coded it to receive the servo values from the Pi to drive an actual servo
+4. Added a DC motor and driver to the microcontroller for vehicle movement, and ensured all of these worked in tandem
+5. Put this entire setup on a Lego chassis for iteration 1 
+   1. Tested this iteration on a table-top test bench with actual walls and 3 printed color blocks to tune the steering values for walls and obstacles. The rotating test bench was made out of Lego.
+6. We then changed to Arduino since it was harder to connect components to a Micro\:bit directly and the expansion board we used had problems driving the servo motor consistently
+
+
+## Open Challenge Algorithm
+
+We started by defining a Frames class which 
+
+- encapsulated a Region of Interest (ROI) 
+- Initialization included defining the boundary coordinates of the ROI and the colors it must be able to detect
+- Had functions to return all the colored pixels matching a specific color range in HSV, return contours by matching adjacent colored pixels, return the biggest contour, return the area of all contours
+
+### Iteration 1
+
+We spent a lot of time in open challenge iterations since the idea was to have a solid foundation for obstacle challenge. The frames class and the state transitions must be reusable for obstacle challenge where needed
+Iteration 1 had 2 distinct states
+
+- STRAIGHT - Drive the robot straight following the walls
+- TURN - When a colored line is seen, check if it is safe to turn and perform a timed turn
+
+**MAIN LOOP**
+
+- Two rectangular ROIs placed on the left and right sides of the frame, each able to detect black colored pixels
+  - Keep a record of the number of black pixels detected within each ROI which represent how much of the inner and outer walls are visible to the camera on each side
+- One rectangular ROI placed on the bottom of the frame to detect orange and blue colored pixels > 200 (to avoid detecting noise)
+  - If Orange was detected first, set direction to clockwise (CW) for the robot to travel
+  - If Blue was detected, set direction to counter-clockwise (CCW)
+  - As soon as a colored line is detected, since it may take several frames to pass over that line, use a timer to avoid reading the same line again
+  - Keep track of number of orange and blue lines crossed
+- If colored line was detected
+  - If there is no wall in the direction of travel, initiate TURN state
+- Else
+  - Initiate STRAIGHT state
+- If the number of lines passed > 12, stop the robot after a fixed time (depending on speed) to position it in the starting section
+- Compute steering value, speed, a direction value (forward/reverse/stop, chosen by the Pi based on what the vehicle currently needs to do), the current lap-line count, and the current state are packed into a single message and sent over USB serial (19200 baud) to an Arduino Nano, which handles the physical motor and servo output
+
+**STRAIGHT**
+<br/>
+- `Steering error` was calculated as `right-side black pixel count - left-side black pixel count`
+- If `Steering error` was positive 
+  - This means more wall visible on the left 
+  - Vehicle should steer right
+- If `Steering error` was negative
+  - This means more wall visible on the right
+  - Vehicle should steer left
+- The steering should be proportional to the error, so a simple proportional (P) controller was used meaning the steering angle was simply the error multiplied by a constant gain value (KP),  the further off-center the pixel counts were, the harder the robot steered
+  - KP constant is simply calculated by scaling the error down to the range of the steering margin (45)
+  - In this case, the error was in the range of 6000 pixels nominally
+  - So we started with a KP of 30 / 6000 = 0.005 and then tuned it from there
+- In summary `Steering angle = Steering error * kp`
+
+**TURN**
+
+- If a `wall missing` condition is detected in the direction of turn, turn steering hard for a fixed amount of time.
+  - No feedback mechanism was used for the turn 
+- The time was tuned until the turn completed properly 
+
+**Observations and improvements made**
+
+- Problem: Bright lighting conditions caused the pixel detection to be fuzzy
+  - **Idea implemented**: Lowered the camera angle by about 8 degrees so as to catch less of ambient light while still being able to see the walls
+- Problem: It would be ideal for a vehicle to travel closer to the inner wall to save time. However, if the algorithm just measured raw pixels on either side, a robot pointed straight but traveling closer to one wall would report a large error even though no correction was actually needed.
+  - **Idea implemented**: Add an offset to the pixel count on the outer perimeter to guide the robot to run close to the inner wall
+  - **Idea for next iteration**: Alternatively, derive the wall geometry/position rather than raw pixel volume, so the vehicle would travel straight regardless of the robot's exact distance from a wall or the lighting conditions on a given day
+- Problem: While a simple proportional (P) controller was mostly sufficient, the robot steering wasn’t as smooth as we wanted it to be, especially after completing a turn. 
+  - **Idea for next iteration**: Add a Derivative (D) to the controller which would account for the rate of change of error to damp out sudden changes in steering and make for smoother steering
+
+### Iteration 2
+
+**STRAIGHT**
+
+- Replaced the two side ROIs with a single thin horizontal ROI band closer spanning the full width of the frame. This ROI was placed just above the vertical center so the algorithm can look ahead
+- Scans inward from each edge of the ROI to find the nearest wall pixel on the left half and the nearest wall pixel on the right half, on the same row, marking each as a boundary point
+- If a wall drops out of frame, the boundary point is simply the far edge of the ROI on that side
+- The midpoint between the two boundary points is the "path center"
+- The horizontal offset between this path center and the frame's true horizontal center is the steering error
+- A small dead zone (±20px) is applied around the centered wall-following error, errors inside this band are treated as zero, preventing constant tiny steering corrections once the robot is already well-centered
+
+* Added a derivative term to the corridor-center error, moving from P to PD control: `control_signal = (kp × error) + (kd × (error − previous_error))`
+  - The derivative term reacts to how quickly the error is changing frame to frame, which damps the overcorrection behavior from Iteration 1 and produces a visibly smoother line, especially noticeable at higher driving speeds where a pure-P response tends to overreact to small changes
+
+**TURN**
+
+- A turn only actually triggers after the line-detected + wall-missing condition holds continuously for a short confirmation window (0.15s), rather than on the first frame it's seen. This prevents the robot from running into corners
+
+**Observations and improvements made**
+
+- Problem: Timed turns still needed per-corner retuning, since the inner wall's length and shape vary between corners depending on the round's randomized wall configuration,  a duration tuned for one corner would overshoot or undershoot the next. Turn duration also drifted over the course of a run as battery voltage sagged and motor speed dropped slightly, or if the wheels lost grip occasionally. Duration of turn had to be adjusted every time we had to change the speed of the robot for testing
+  - **Idea for next iteration**: Use a feedback mechanism to detect when a turn ends and implement a PD controller
+
+### Iteration 3 (Current)
+
+**MAIN LOOP**
+
+- Added an IMU (BNO055) to track heading (0–360°)
+  - Note: We built a utility program [bno055.py](https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/src/sensor/bno055.py) to calibrate and test the BNO055 IMU sensor. The IMU integration was also tested on the table-top test bench and tuned before the robot was tested on the field
+- Reset heading to 0 at startup
+- Each time a colored line is passed, a turn counter increments, and the target heading is set as an **absolute** multiple of 90°,  `turn_count × 90°` (mod 360°, sign flipped for CCW),  rather than the previous target plus 90°. This is to ensure small heading errors from one turn can't accumulate and drift into the next turn's target
+
+**TURN**
+
+- `Turn error` is the shortest signed angular distance between target and current heading (normalized to −180°…180°, so the robot always turns the short way)
+- `Steering value = turn error * kp_turn`
+
+- `kp_turn` is the proportional gain constant for  proportional (P) control, consistent with the steering approach used elsewhere in the system
+- The turn is considered complete once heading error is within 2°, at which point the robot returns to STRAIGHT and resets its tracking flags
+
+## Obstacle Challenge Algorithm
+
+**Pass rule:** green blocks are passed on the left, red blocks are passed on the right.
+
+### Iteration 1 - Treating Obstacles as Virtual Walls
+
+**Approach**
+
+- Reused the Open Challenge STRAIGHT corridor-centering algorithm rather than building separate obstacle-handling logic
+- Red is passed on the right, so a detected red block sits to the robot's left as it passes,  its bottom-right corner (the edge nearest the robot's path) was fed in as a substitute **left-wall** boundary point
+- Green is passed on the left, so a detected green block sits to the robot's right as it passes,  its bottom-left corner was fed in as a substitute **right-wall** boundary point
+- The corridor-center calculation then treated that corner exactly like a real wall-edge point, steering around it the same way it would steer around a wall
+
+**Issues**
+
+- The corridor-centering math was tuned for two continuous, roughly parallel wall surfaces,  a single point from a small discrete block gave a much shakier corridor estimate, since the "wall" on that side was only a few centimeters wide instead of an extended surface
+- With only one corner representing the whole block, the estimated boundary jumped noticeably frame to frame as viewing angle changed on approach, so steering reacted inconsistently to what should have been a smooth approach
+- No explicit sense of distance to the block,  correction strength was identical whether the block was far away or dangerously close, since wall-following gains (tuned for gradual convergence) were being reused for what should've been a more urgent, close-range maneuver
+- Blocks near a real corner or wall created ambiguity about which "wall" the algorithm was actually reacting to, occasionally steering toward the block instead of away from it
+
+**Why We Improved**
+
+- Needed obstacle avoidance treated as its own problem with its own reference points, not a block disguised as a wall
+- Needed distance to the block to explicitly scale the strength of the correction, not just its direction
+
+### Iteration 2,  Dual-Axis "Pulling" Control
+
+**Approach**
+
+- Green block: reference dot at the block's bottom-left corner, fixed target dot at the bottom-right corner of the screen
+- Red block: mirrored,  reference dot at the block's bottom-right corner, fixed target dot at the bottom-left corner of the screen
+- Horizontal (x) offset between reference and target dots drives a PD controller,  correction is added to center for red (steers right) and subtracted for green (steers left)
+- Vertical (y) offset doesn't drive steering directly,  it produces a distance falloff factor that scales the whole PD correction: strongest as the block's bottom edge nears the bottom of the frame (close), fading toward zero as it sits higher in the frame (far). This is exactly what Iteration 1 was missing
+- Overall effect is like an elastic band strung between the two dots,  as the robot approaches, the "pull" tightens and the correction strengthens, instead of a constant-strength nudge regardless of distance
+- Falls back to the same corridor-centering wall-following logic from Open Challenge whenever no block is visible, but with its own separately tuned gains,  Obstacle Challenge's field and required correction strength weren't identical to Open Challenge's, so tuning each independently gave a tighter fit for both
+- If both a red and green block are visible in the same frame, only the physically nearer one (by vertical offset) is used to compute steering that frame,  the farther block is detected but ignored until it becomes the closer one
+- Steering output is clamped to the same safe range used everywhere else in the system
+
+**Issues**
+
+- Inherited the same timed-turn unreliability as Open Challenge Iteration 2,  turn duration needed per-corner retuning and drifted with battery voltage and wheel grip over a run
+
+**Why We Improved**
+
+- Wanted the same closed-loop, drift-independent turning fix already validated in Open Challenge Iteration 3
+
+### Iteration 3 (Current),  IMU Heading-Based Turns
+
+**Approach**
+
+- Kept the Iteration 2 dual-axis pulling logic and wall-following fallback unchanged
+- Replaced the fixed-duration turn with the same IMU heading-based approach as Open Challenge,  absolute cardinal target headings, incremented 90° per corner, closed-loop control to close the heading error, exiting once within tolerance rather than after a fixed time
+- Mid-turn bail-out preserved: if a red or green block becomes visible above threshold while still turning, the robot exits the turn immediately and hands back to obstacle avoidance that same frame,  reacting to a visible block takes priority over finishing a scheduled turn
+
+**Issues Resolved**
+
+- Turning no longer depends on constant motor speed, wheel grip, or battery voltage, and generalizes across corner shapes without retuning
+- No fixed duration to separately tune for Obstacle Challenge's corner geometry, since heading is now the closing condition
+
+### Obstacle-Clear Behavior
+
+No explicit "cleared" trigger exists,  obstacle avoidance is recomputed fresh every single frame based on whether a red or green block is currently visible above the detection threshold. The moment a block's contour area drops below that threshold,  out of frame, passed, or occluded,  the very next frame simply falls through to wall-following instead, with no dedicated timer or debounce needed for the handoff.
+
+### Corner Safety Layer
+
+- Independent of whichever behavior is currently driving steering, four small ROIs step diagonally in from each top corner of the frame, checking how "full" of wall color they are
+- A fully filled side nudges steering away from it more strongly than a partially filled reading; this correction is added on top of the frame's already-computed steering value, before the final clamp
+- Runs every frame except while parked, acting as a standing safety margin against cutting a corner too tightly, on top of and independent from the primary steering decision
+
+### State Machine
+
+Same two core behaviors as Open Challenge (wall-following and turning), with additional states layered in for obstacles, wrong-side blocks, and parking:
+
+- **LEAVE**,  starting state; drives straight out of the parking bay, then hands off to normal driving once clear
+- **STRAIGHT**,  corridor-centering wall-following; active by default whenever no red/green block is visible
+- **OBSTACLE**,  dual-axis pulling control; active by default whenever a red or green block is visible
+- **TURNING**,  IMU heading-based turn triggered at a lap line; exits early back to OBSTACLE if a block becomes visible mid-turn, otherwise exits to STRAIGHT once heading target is reached
+- **OBS\_CRITICAL**,  triggered by spotting a "wrong-side" block early, near an upcoming turn; holds a near-straight course via IMU-held heading until a threshold amount of wall fills the center of the frame, then forces a hard turn for a fixed duration to physically clear the block, then resumes normal driving
+- **BETWEEN**,  entered after an OBS\_CRITICAL sequence completes near the end of the run; treats every remaining block as if it were red regardless of actual color, and watches for the parking wall to appear
+- **PARK**,  final state; speed and steering held at rest
+
+*Parking maneuver,  to be added later.*
+
+## Microcontroller Code (Arduino Nano)
+
+**Role**
+
+- The Arduino Nano is the low-level hardware controller: it receives one serial command per frame from the Raspberry Pi and converts it into actual electrical signals for the drive motor, steering servo, an OLED status display, and a NeoPixel LED strip
+- The Pi handles all vision processing and decision-making, including which direction the vehicle should currently be driving; the Arduino has no awareness of *why* a command was sent, only how to execute it
+- We built a utility program [pi2nano_bi_test.py](https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/src/test/pi2nano_bi_test.py) to rigorously test the transmission of robot control data (servo angle and steering, newline \n delimited) to Arduino over serial connection. This program helped us identify that 30 millisecs is the minimum time between the Pi transmitting control data over USB serial connection and for the Arduino to finish processing it. If the data transfer is any faster (irrespective of whether the standard USB or USB 3 port was used), Arduino won’t be ready to receive the next byte stream over serial connection - even with non-blocking code. This would cause the outgoing message flush to fail on the Pi and if left unhandled, it would kill the challenge program
+
+**Communication Protocol**
+
+- Listens on serial at 19200 baud, matching the Pi's configured rate
+- Reads one line at a time into a fixed 20-byte buffer via `readBytesUntil('\n', ...)`, null-terminating it once a full message arrives,  the fixed buffer size is a deliberate guard against uncontrolled memory allocation on a small microcontroller
+- Expected message format: `steering speed direction lineCount state` (e.g. `110 255 1 12 OPEN`), parsed in one call with `sscanf`
+- `direction` (0 = stop, 1 = forward, 2 = reverse) is actively chosen by the Pi each frame based on what the vehicle currently needs to do, not a fixed constant,  the Arduino simply executes whatever direction it's told
+- The Arduino also talks back to the Pi: when the physical start button is pressed, it sends a plain `"START"` line over the same serial connection, with a short debounce delay
+
+**Steering & Motor Control**
+
+- Before applying anything, the received `servo` value is range-checked (`30 < servo < 160`),  if it falls outside this window, the entire steering + motor update is skipped for that frame, acting as a basic sanity check against corrupted or garbled serial data rather than driving on a bad command
+- If valid, steering is applied first (`myservo.write(servo)`), then motor output, so both actuators respond to values from the same command packet rather than a mix of an old and new one
+- Motor control goes through the L298N driver: `speed` (0–255) is written as a PWM duty cycle via `analogWrite`, while `direction` sets two digital direction pins,  forward and reverse drive the pins in opposite states, and stop (or an out-of-range `direction` value) sets both pins low, cutting drive entirely regardless of speed
+
+**Status Display (OLED)**
+
+- A 128×64 monochrome OLED (SH1106 driver, addressed over I²C) shows live telemetry every frame: current steering angle, line/lap count, motor speed, the current challenge state string, and a directional indicator (`>>` / `<<` / `XX`) showing forward, reverse, or stopped,  laid out in a fixed grid with divider lines, intended for operators to diagnose communication or control issues during testing at a glance
+
+**LED Strip Status Indicator**
+
+- An 8-pixel NeoPixel strip gives an at-a-glance visual state readout without needing to read the OLED up close: intended to show white for the OPEN challenge state and red otherwise
+- **Known issue:** the state check currently compares the character array directly (`state == "OPEN"`) rather than with `strcmp()`, which compares memory addresses rather than string contents in C/C++ and will essentially never evaluate true,  the code already carries a comment flagging the correct fix, but it hasn't been applied yet, so in practice the LED likely always shows red regardless of actual state
+- A full rainbow sweep runs once at boot as a power-on self-test, and both end pixels turn green once initialization completes, signaling the robot is ready to start
+
+**Startup Sequence**
+
+- On boot: configure pins, attach the servo, open serial, initialize the OLED and show a "BOOTING" message, initialize the LED strip, sweep the servo through a small range as a functional check before returning it to its calibrated center, run the rainbow self-test, then display "-READY-" and light the ready-indicator LEDs
+
+# 4. List of Components
 
 | Major components                                                 | Reference Cost in CAD<br>\- As of Sep 1, 2026<br>\- Taxes not included | Purchase Link for Future Reference                                                            |
 | ---------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
@@ -537,13 +770,13 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
 | 3D printed parts for the chassis                                 | $25.00                                                                 | Approximately for one spool of PLA filament                                                   |
 | Total                                                            | $473.49                                                                |                                                                                               |
 
-# 7. 3D Model Files
+# 5. 3D Model Files
 
-## 7.1 Onshape CAD
+## 5.1 Onshape CAD
 
 We used Onshape to design the 3D models used to make the robot. The files can be found here (hyperlink).
 
-## 7.2 STL Files
+## 5.2 STL Files
 
 **Chassis and Core Structure**
 
