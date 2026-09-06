@@ -83,7 +83,7 @@ on = 1 # motor direction control: 0 - off, 1 - forward, 2 - reverse
 #Last sent message sent to serial to compare against current message to avoid sending duplicates
 last_message = "" 
 
-#WALL FOLLOWING VALUES (ported from obstaclev2.py's wall_follow(), used by STRAIGHT)
+#WALL FOLLOWING VALUES 
 wfx1, wfy1, wfx2, wfy2 =  0, 220, 640, 260
 
 wf_gap_half_width = 50   # tune this - each gap edge sits this many pixels out from wall_frame's own center
@@ -119,7 +119,7 @@ STATE_NAMES = {STRAIGHT: "STRAIGHT", TURNING: "TURNING"}
 
 state = STRAIGHT
 
-#wall-following steering, ported from obstaclev2.py's STRAIGHT state (no block detection here)
+#wall-following steering, 
 def wall_follow(image):
     global previous_error_wall
 
@@ -334,16 +334,10 @@ while True:
         if time.time() - start_time_finshed > 5: #if all orange lines are detected for more than 3 seconds, stop the car
             speed_value = 0 
 
-
-    # Hello Shadyta, this is your coach suffering with the servo
-    #Straight angle is 85 dont question why :)
-    #max andgles will be 135 and 55 
-
-    #120
+    #CAPPING SERVO VALUES
     if steering_value > (center + steering_margin):
         steering_value = (center + steering_margin)
 
-    #40
     elif steering_value < (center - steering_margin):
         steering_value = (center - steering_margin)
     
