@@ -1,7 +1,7 @@
 Team Sub-Atomica
 ====
 
-This repository contains engineering materials of a self-driven vehicle's model participating in the WRO Future Engineers competition in the season 2026.
+This repository contains the engineering documentation and our journey of building an autonomous vehicle to compete at the 2026 WRO Future Engineers competition.
 
 <p align="center">
 <img width="562" height="507" alt="image" src="https://github.com/user-attachments/assets/5c8130d9-c9df-4284-a268-e8d9e77e684b" />
@@ -36,13 +36,12 @@ Our robot is called Jadoo which means magic in Hindi. The name comes from a popu
           
 The Width helps to get around tight areas and the height gives a low base with a more balanced center of gravity all while being easy to maneuver due to the length. 
 
-## Obstacle challenge video
-https://www.youtube.com/watch?v=r0wWpeo_AAc 
-
 ## Open challenge videos
-https://www.youtube.com/watch?v=8OkpqqfYOhU 
+[![Watch the video](https://github.com/user-attachments/assets/bb547e53-6020-4515-87ad-47aec5ea7645)](https://www.youtube.com/watch?v=8OkpqqfYOhU )
 
-</br>
+## Obstacle challenge video
+[![Watch the video](https://github.com/user-attachments/assets/e8f30f3e-51ba-4644-936d-f1f42620b62b)](https://www.youtube.com/watch?v=r0wWpeo_AAc)
+
 
 ## Content
 
