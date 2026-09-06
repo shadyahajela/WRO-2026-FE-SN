@@ -29,10 +29,13 @@ Our robot is called Jadoo which means magic in Hindi. The name comes from a popu
 
 **Dimensions**
 
-  Width: 12 cm                     
-  Length: 23 cm                    
-  Height: 17 cm (Without wire)      
-          20 cm (With Cam0era wire)  
+| **Specification** | **Measurement** |
+|---|---|
+| **Width** | 12 cm |
+| **Length** | 23 cm |
+| **Height** | 17 cm (Without wire) |
+| | 20 cm (With Camera wire) |
+| **Weight** | About 800 grams |
           
 The Width helps to get around tight areas and the height gives a low base with a more balanced center of gravity all while being easy to maneuver due to the length. 
 
@@ -146,7 +149,6 @@ To achieve accurate and consistent steering, we used a combination of CAD adjust
 
 <img width="275" height="489" alt="IMG_4013" src="https://github.com/user-attachments/assets/f28c9ddb-460f-42f4-8379-5101067f59bd" />
 <img width="650" height="424" alt="image" src="https://github.com/user-attachments/assets/9caed275-5877-459d-ba2e-db10171e0d1b" />
-
 <img src="v-photos/ackerman steering.png" alt="Ackerman Steering">
 
 *This was an early prototype of the Ackerman Steering model before we added it to the first iteration of our Lego car chassis.*
@@ -195,7 +197,6 @@ An alternative would be the MG996R servo, which provides higher torque and more 
 | Height | 200 | (Including camera wire) |
 
 **Design Overview:**
-wnog
 
 **Iteration 1: LEGO**
 
@@ -259,13 +260,13 @@ Our chassis was designed on Onshape and printed using Carbon fiber, as it is lig
 Our torque and speed reasoning lists the given parameters, we are able to calculate the max speed, the robots acceleration as well as the gives the minimum torque required to move our robot, allowing us to control speed. We are also able to calculate the cruising torque and stall torque which we used for selecting our motor. Based on our robot's total mass of 0.8 kg and wheel diameter of 0.056 m, we calculated a required motor torque of approximately 0.0117 N·m during acceleration, which is well within our motor's stall torque of 0.0833 N·m, giving a safety margin of roughly 7x (required torque is only ~14% of available stall torque).
 
 
-# 2. Power Systems and Architecture
+# 2. Power Systems and Hardware Architecture
 
 For the car to know what its doing, we need input and power.
 
 Objective: 
-  - Incorporate camera sensor and IMU
-  - Create power system architecture for robot
+  - Select the right hardware / electronic components for the entire sensor input processing and actuator control in real-time 
+  - Supply adequate power to all these components
 
 ## 2.1 Power Source
 
@@ -459,7 +460,7 @@ Using the Raspberry Pi 5 reduces the risk of processing bottlenecks affecting na
 + This subsystem architecture improves reliability by isolating critical low-level control from higher-level software. If the vision or navigation software requires significant processing, the Arduino can continue executing motor and steering commands without relying on continuous high-level computation. This separation therefore supports more consistent movement and provides a more robust architecture for the challenges defined by WRO Future Engineers.
 
 
-  **Expansion Board:** Arduino Nano Shield
+**Expansion Board:** Arduino Nano Shield
 
   <table>
   <tr>
@@ -529,7 +530,6 @@ This diagram shows how the 12V battery supplies power to the DC motor through th
 | Short USB to USB-C cable                                         | $11.39                                                                 | [Amazon.ca](https://www.amazon.ca/dp/B0DG8J6S1G)                                              |
 | Rocker Switch                                                    | $2.65                                                                  | [aliexpress.com](https://www.aliexpress.com/item/1005007044175800.html)                       |
 | Push Button breakout module                                      | $1.52                                                                  | [aliexpress.com](https://www.aliexpress.com/item/32820437436.html)                            |
-
 | Lego wheels, axles and connectors                                | $50.00                                                                 | Approximately                                                                                 |
 | 3D printed parts for the chassis                                 | $25.00                                                                 | Approximately for one spool of PLA filament                                                   |
 | Total                                                            | $473.49                                                                |                                                                                               |
@@ -537,7 +537,7 @@ This diagram shows how the 12V battery supplies power to the DC motor through th
 
 # 3. Software Architecture
 
-# Code Origins
+## 3.1 Code Origins
 Our  coding journey had humble origins following our research of other teams since many of the concepts required to build and program an autonomous vehicle were new to us, 
 
 1. Started with just a raspberry pi and a camera to detect walls and objects
@@ -549,7 +549,7 @@ Our  coding journey had humble origins following our research of other teams sin
 7. We then changed to Arduino since it was harder to connect components to a Micro\:bit directly and the expansion board we used had problems driving the servo motor consistently
 
 
-## Open Challenge Algorithm
+## 3.2 Open Challenge Algorithm
 
 We started by defining a Frames class which 
 
@@ -557,7 +557,7 @@ We started by defining a Frames class which 
 - Initialization included defining the boundary coordinates of the ROI and the colors it must be able to detect
 - Had functions to return all the colored pixels matching a specific color range in HSV, return contours by matching adjacent colored pixels, return the biggest contour, return the area of all contours
 
-### Iteration 1
+### 3.2.1 Iteration 1
 
 We spent a lot of time in open challenge iterations since the idea was to have a solid foundation for obstacle challenge. The frames class and the state transitions must be reusable for obstacle challenge where needed
 Iteration 1 had 2 distinct states
@@ -566,6 +566,8 @@ Iteration 1 had 2 distinct states
 - TURN - When a colored line is seen, check if it is safe to turn and perform a timed turn
 
 **MAIN LOOP**
+
+<img width="1167" height="607" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/open%20challenge%20iteration%201.png" />
 
 - Two rectangular ROIs placed on the left and right sides of the frame, each able to detect black colored pixels
   - Keep a record of the number of black pixels detected within each ROI which represent how much of the inner and outer walls are visible to the camera on each side
@@ -612,11 +614,13 @@ Iteration 1 had 2 distinct states
 - Problem: While a simple proportional (P) controller was mostly sufficient, the robot steering wasn’t as smooth as we wanted it to be, especially after completing a turn. 
   - **Idea for next iteration**: Add a Derivative (D) to the controller which would account for the rate of change of error to damp out sudden changes in steering and make for smoother steering
 
-### Iteration 2
+### 3.2.2 Iteration 2
 
 **STRAIGHT**
 
-- Replaced the two side ROIs with a single thin horizontal ROI band closer spanning the full width of the frame. This ROI was placed just above the vertical center so the algorithm can look ahead
+<img width="1167" height="607" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/open%20challenge%20iteration%202%20and%203.png" />
+
+- Replaced the two side ROIs with a single thin horizontal ROI band closer spanning the full width of the frame. This ROI was placed just at the vertical center so the algorithm can sufficiently look ahead to calculate steering
 - Scans inward from each edge of the ROI to find the nearest wall pixel on the left half and the nearest wall pixel on the right half, on the same row, marking each as a boundary point
 - If a wall drops out of frame, the boundary point is simply the far edge of the ROI on that side
 - The midpoint between the two boundary points is the "path center"
@@ -635,7 +639,7 @@ Iteration 1 had 2 distinct states
 - Problem: Timed turns still needed per-corner retuning, since the inner wall's length and shape vary between corners depending on the round's randomized wall configuration,  a duration tuned for one corner would overshoot or undershoot the next. Turn duration also drifted over the course of a run as battery voltage sagged and motor speed dropped slightly, or if the wheels lost grip occasionally. Duration of turn had to be adjusted every time we had to change the speed of the robot for testing
   - **Idea for next iteration**: Use a feedback mechanism to detect when a turn ends and implement a PD controller
 
-### Iteration 3 (Current)
+### 3.2.3 Iteration 3 (Current)
 
 **MAIN LOOP**
 
@@ -652,11 +656,11 @@ Iteration 1 had 2 distinct states
 - `kp_turn` is the proportional gain constant for  proportional (P) control, consistent with the steering approach used elsewhere in the system
 - The turn is considered complete once heading error is within 2°, at which point the robot returns to STRAIGHT and resets its tracking flags
 
-## Obstacle Challenge Algorithm
+## 3.3 Obstacle Challenge Algorithm
 
 **Pass rule:** green blocks are passed on the left, red blocks are passed on the right.
 
-### Iteration 1 - Treating Obstacles as Virtual Walls
+### 3.3.1 Iteration 1 - Treating Obstacles as Virtual Walls
 
 **Approach**
 
@@ -677,7 +681,10 @@ Iteration 1 had 2 distinct states
 - Needed obstacle avoidance treated as its own problem with its own reference points, not a block disguised as a wall
 - Needed distance to the block to explicitly scale the strength of the correction, not just its direction
 
-### Iteration 2,  Dual-Axis "Pulling" Control
+### 3.3.2 Iteration 2,  Dual-Axis "Pulling" Control
+
+<img width="400" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/obsg.png" />
+<img width="400" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/obsr.png" />
 
 **Approach**
 
@@ -698,7 +705,7 @@ Iteration 1 had 2 distinct states
 
 - Wanted the same closed-loop, drift-independent turning fix already validated in Open Challenge Iteration 3
 
-### Iteration 3 (Current),  IMU Heading-Based Turns
+### 3.3.3 Iteration 3 (Current),  IMU Heading-Based Turns
 
 **Approach**
 
@@ -717,11 +724,13 @@ No explicit "cleared" trigger exists,  obstacle avoidance is recomputed fresh e
 
 ### Corner Safety Layer
 
+<img width="400" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/obstacle%20edge%20case%20detection.png" />
+
 - Independent of whichever behavior is currently driving steering, four small ROIs step diagonally in from each top corner of the frame, checking how "full" of wall color they are
 - A fully filled side nudges steering away from it more strongly than a partially filled reading; this correction is added on top of the frame's already-computed steering value, before the final clamp
 - Runs every frame except while parked, acting as a standing safety margin against cutting a corner too tightly, on top of and independent from the primary steering decision
 
-### State Machine
+### 3.3.4 State Machine
 
 Same two core behaviors as Open Challenge (wall-following and turning), with additional states layered in for obstacles, wrong-side blocks, and parking:
 
@@ -733,7 +742,7 @@ Same two core behaviors as Open Challenge (wall-following and turning), with add
 - **BETWEEN**,  entered after an OBS\_CRITICAL sequence completes near the end of the run; treats every remaining block as if it were red regardless of actual color, and watches for the parking wall to appear
 - **PARK**,  final state; speed and steering held at rest
 
-**PARKING**
+### 3.3.5 PARKING
 
 Parking state initiates when the 12th floor line is read. Parking is achieved by 5 distinct maneuvers explained below
 
