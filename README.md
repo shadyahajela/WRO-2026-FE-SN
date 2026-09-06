@@ -1,11 +1,11 @@
 Engineering materials
 ====
 
-This repository contains engineering materials of a self-driven vehicle's model participating in the WRO Future Engineers competition in the season 2022.
+This repository contains engineering materials of a self-driven vehicle's model participating in the WRO Future Engineers competition in the season 2026.
 
 ## Content
 
-* `t-photos` contains 2 photos of the team (an official one and one funny photo with all team members)
+* `t-photos` contains photos of the team.
 * `v-photos` contains 6 photos of the vehicle (from every side, from top and bottom)
 * `video` contains the video.md file with the link to a video where driving demonstration exists
 * `schemes` contains one or several schematic diagrams in form of JPEG, PNG or PDF of the electromechanical components illustrating all the elements (electronic components and motors) used in the vehicle and how they connect to each other.
@@ -315,6 +315,7 @@ OLD MOTOR DRIVER IMAGE: DRV8871
 
 <img width="140" height="92.7" alt="image" src="https://github.com/user-attachments/assets/1ebcd3af-6231-4427-b338-a13d668f537a" />
 
+We used DRV8871 in earlier iterations of the robot because of its compactness and its single motor control. However, it kept burning out due to motor feedback coming back to the driver. Motor feedback occurs when a motor is forced to move, and was probably caused by the constant pulling of the robot we did when testing. After further research, we found out that this feedback was a common problem with the DRV8871, so we decided to move to the L298N motor driver. Although it is much larger and bulkier, we had considerable space for the motor driver so it wasn't an issue. The L298N also has a heatsink, so overheating is not a problem.
 
   ## 2.2 Sensor and Camera
   
@@ -341,21 +342,21 @@ OLD MOTOR DRIVER IMAGE: DRV8871
 
   **Selection Reasoning:** 
 
-160° wide field of view captures more of the course, reducing blind spots and improving environmental awareness.
-5MP resolution provides enough detail to reliably distinguish course features and colored markers.
-1080p at 30 FPS provides responsive visual data for real-time image processing and object detection.
-Compact and lightweight design reduces its impact on vehicle weight and balance while allowing flexible mounting.
+  160° wide field of view captures more of the course, reducing blind spots and improving environmental awareness.
+  5MP resolution provides enough detail to reliably distinguish course features and colored markers.
+  1080p at 30 FPS provides responsive visual data for real-time image processing and object detection.
+  Compact and lightweight design reduces its impact on vehicle weight and balance while allowing flexible mounting.
 
-This setup provides a 160° wide-angle view that increases the robot's visual coverage during both the Open Challenge and Obstacle Challenge. The camera supplies visual information about walls, pillars, colored markers, parking spaces, and lane lines, which is combined with other sensor data to support navigation and decision-making. The main tradeoff is balancing wider coverage with image processing requirements, so the selected resolution and frame rate provide sufficient detail and responsiveness without unnecessarily increasing processing demands.
+  This setup provides a 160° wide-angle view that increases the robot's visual coverage during both the Open Challenge and Obstacle Challenge. The camera supplies visual information about walls, pillars, colored markers, parking spaces, and lane lines, which is combined with other sensor data to support navigation and decision-making. The main tradeoff is balancing wider coverage with image processing requirements, so the selected resolution and frame rate provide sufficient detail and responsiveness without unnecessarily increasing processing demands.
 
-The camera is mainly used for the following tasks:
+  The camera is mainly used for the following tasks:
 
-- Detect and determine wall positions.
-- Identify pillar colors and types.
-- Recognize parking zones.
-- Track path lines and boundaries.
+  - Detect and determine wall positions.
+  - Identify pillar colors and types.
+  - Recognize parking zones.
+  - Track path lines and boundaries.
 
-   **BNO055 Inertial Measurement Unit (IMU):** 
+**BNO055 Inertial Measurement Unit (IMU):** 
 
   <table>
   <tr>
@@ -375,9 +376,9 @@ The camera is mainly used for the following tasks:
   </tr>
   </table>
 
-  **Selection Reasoning:** 
+**Selection Reasoning:** 
 
-Considering we wanted to have a relative compass to reduce additional code in the Arduino, we chose the BNO055. The BNO055 is a compact 9-axis IMU that combines a 3-axis accelerometer, 3-axis gyroscope, and 3-axis magnetometer with an onboard processor for sensor fusion. It provides orientation data such as heading, Euler angles, linear acceleration, and gravity direction, reducing the need for complex external calculations.
+Considering we wanted to have a relative compass to reduce additional code in the Arduino, we chose the BNO055. The BNO055 is a compact 9-axis IMU that combines a3-axis accelerometer, 3-axis gyroscope, and 3-axis magnetometer with an onboard processor for sensor fusion. It provides orientation data such as heading,       Euler angles, linear acceleration, and gravity direction, reducing the need for complex external calculations.
     
 We mounted the BNO055 near the center of the chassis to provide stable and consistent measurements. It communicates with the Arduino Nano through the I²C interface, continuously providing real-time orientation and angular velocity data. This helps the robot maintain an accurate heading and make smoother steering adjustments, which are especially important during obstacle navigation.
   
@@ -522,7 +523,6 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
 | 1.3" OLED display module SH1106 128x64                           | $5.33                                                                  | [aliexpress.com](https://www.aliexpress.com/item/1005006827988792.html)                       |
 | Sainsmart Wideangle 5MP Camera 160 degree FoV (OV5647 sensor)    | $12.91                                                                 | [Amazon.ca](https://www.amazon.ca/SainSmart-Fish-Eye-Camera-Raspberry-Arduino/dp/B00N1YJKFS)  |
 | Adafruit 9-DOF Absolute Orientation IMU Fusion Breakout - BNO055 | $38.38                                                                 | [Aliexpress.com](https://www.aliexpress.com/item/1005010734176030.html)                       |
-| VL53L0X TOF sensor                                               | $13.99                                                                 | [Amazon.ca](https://www.amazon.ca/dp/B0F1MRW55R)                                              |
 | 12V Battery                                                      | $27.99                                                                 | [Amazon.ca](https://www.amazon.ca/12V-2800mAh-Rechargeable-Battery-Replacement/dp/B0FJ27ZT28) |
 | 12V to 5V Step-down converter (XL4015 with Display)              | $4.80                                                                  | [aliexpress.com](https://www.aliexpress.com/item/1005008401247033.html)                       |
 | JGA25-371 620 rpm 12V Brushless DC motor with Encoder            | $12.78                                                                 | [aliexpress.com](https://www.aliexpress.com/item/1005007546764319.html)                       |
@@ -532,7 +532,7 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
 | Short USB to USB-C cable                                         | $11.39                                                                 | [Amazon.ca](https://www.amazon.ca/dp/B0DG8J6S1G)                                              |
 | Rocker Switch                                                    | $2.65                                                                  | [aliexpress.com](https://www.aliexpress.com/item/1005007044175800.html)                       |
 | Push Button breakout module                                      | $1.52                                                                  | [aliexpress.com](https://www.aliexpress.com/item/32820437436.html)                            |
-| RGB LED SMD Module                                               | $2.03                                                                  | [aliexpress.com](https://www.aliexpress.com/item/1005006764822374.html)                       |
+
 | Lego wheels, axles and connectors                                | $50.00                                                                 | Approximately                                                                                 |
 | 3D printed parts for the chassis                                 | $25.00                                                                 | Approximately for one spool of PLA filament                                                   |
 | Total                                                            | $473.49                                                                |                                                                                               |
