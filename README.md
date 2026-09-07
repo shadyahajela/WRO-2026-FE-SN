@@ -512,9 +512,9 @@ This subsystem architecture improves reliability by isolating critical low-level
 
 ## 2.6 Power System Architecture
 
-<img width="1167" height="607" alt="image" src="https://github.com/user-attachments/assets/c2637fd0-5c40-4e5f-b6e0-8fb43fe7991f" />
+This diagram shows how the 12V battery supplies power to the DC motor through the motor driver, and the step down buck converter which them supplies 5V power to the rest of the components. 
 
-This diagram shows how the 12V battery supplies power to the DC motor through the motor driver, and the step down buck converter which them supplies power to the rest of the components. 
+<img width="1167" height="607" alt="image" src="https://github.com/user-attachments/assets/c2637fd0-5c40-4e5f-b6e0-8fb43fe7991f" />
 
 ## 2.7 List of Components
 
@@ -543,14 +543,14 @@ This diagram shows how the 12V battery supplies power to the DC motor through th
 # 3. Software Architecture
 
 ## 3.1 Code Origins
-Our  coding journey had humble origins following our research of other teams since many of the concepts required to build and program an autonomous vehicle were new to us, 
+Following our research of other teams our exploration of software development had humble origins since many of the concepts required to build and program an autonomous vehicle were new to us.
 
-1. Started with just a raspberry pi and a camera to detect walls and objects
+1. Started with just a raspberry pi and a wide-angle camera to detect walls and objects
 2. Added proportional steering angle calculation to drive a virtual servo
 3. Had a Micro\:bit microcontroller connected to the Raspberry Pi over USB for serial connection, and coded it to receive the servo values from the Pi to drive an actual servo
 4. Added a DC motor and driver to the microcontroller for vehicle movement, and ensured all of these worked in tandem
 5. Put this entire setup on a Lego chassis for iteration 1 
-6. Tested this iteration on a table-top test bench with actual walls and 3 printed color blocks to tune the steering values for walls and obstacles. The rotating test bench was made out of Lego.
+6. Tested this iteration on a table-top test bench made out of Lego with actual walls and 3 printed color blocks to tune the steering values for walls and obstacles.
 7. We then changed to Arduino since it was harder to connect components to a Micro\:bit directly and the expansion board we used had problems driving the servo motor consistently
 
 
@@ -558,7 +558,7 @@ Our  coding journey had humble origins following our research of other teams sin
 
 We started by defining a Frames class which 
 
-- encapsulated a Region of Interest (ROI) 
+- Encapsulated a Region of Interest (ROI) 
 - Initialization included defining the boundary coordinates of the ROI and the colors it must be able to detect
 - Had functions to return all the colored pixels matching a specific color range in HSV, return contours by matching adjacent colored pixels, return the biggest contour, return the area of all contours
 
@@ -572,7 +572,7 @@ Iteration 1 had 2 distinct states
 
 **MAIN LOOP**
 
-<img width="1167" height="607" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/open%20challenge%20iteration%201.png" />
+<img width="600" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/open%20challenge%20iteration%201.png" />
 
 - Two rectangular ROIs placed on the left and right sides of the frame, each able to detect black colored pixels
   - Keep a record of the number of black pixels detected within each ROI which represent how much of the inner and outer walls are visible to the camera on each side
@@ -623,7 +623,7 @@ Iteration 1 had 2 distinct states
 
 **STRAIGHT**
 
-<img width="1167" height="607" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/open%20challenge%20iteration%202%20and%203.png" />
+<img width="600" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/open%20challenge%20iteration%202%20and%203.png" />
 
 - Replaced the two side ROIs with a single thin horizontal ROI band closer spanning the full width of the frame. This ROI was placed just at the vertical center so the algorithm can sufficiently look ahead to calculate steering
 - Scans inward from each edge of the ROI to find the nearest wall pixel on the left half and the nearest wall pixel on the right half, on the same row, marking each as a boundary point
@@ -688,8 +688,12 @@ Iteration 1 had 2 distinct states
 
 ### 3.3.2 Iteration 2,  Dual-Axis "Pulling" Control
 
-<img width="400" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/obsg.png" />
-<img width="400" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/obsr.png" />
+<table>
+  <tr>
+    <td align="center"><strong>Parking clockwise</strong><img width="400" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/obsg.png" /></td>
+    <td align="center"><strong>Parking counter-clockwise</strong><img width="400" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/obsr.png" /></td>
+  </tr>
+</table>
 
 **Approach**
 
@@ -751,20 +755,29 @@ Same two core behaviors as Open Challenge (wall-following and turning), with add
 
 Parking state initiates when the 12th floor line is read. Parking is achieved by 5 distinct maneuvers explained below
 
+<table>
+  <tr>
+    <td align="center"><strong>Parking clockwise</strong><img src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/Clockwise.png" width="600"></td>
+    <td align="center"><strong>Parking counter-clockwise</strong><img src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/Counter%20Clockwise.png" width="600"></td>
+  </tr>
+</table>
+
 1. Continue straight (IMU guided) until a small ROI detect the wall ahead to stop the robot at a fixed position 
 2. Turn 90 degrees (IMU guided) in the direction of the parking blocks
-3. Continue straight ahead towards the parking blocks, by following a fixed offset against the walls until the robot positions against the first parking block
+3. a - Counter Clock-wise: Continue straight ahead towards the parking blocks by following a fixed offset against the wall until the robot positions against the first parking block
+3. B - Clock-wise: Continue straight ahead towards the parking blocks by following a fixed offset against the walls until the robot sees the orange turn line on the o
 4. Depending on the direction, move forward or backward straight until the robot positions itself ahead of the second parking block. This requires the camera to detect the second parking block in an ROI on the side
 5. Execute a timed reverse double turn into the parking area similar to we perform parallel parking in real life
 
 <table>
   <tr>
-    <td align="center"><strong>Parking clockwise</strong><img src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/Clockwise.png" width="2500"></td>
+    <td align="center"><strong>Parking clockwise</strong><br/>
+    <img width="800" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/parking%20between.png" /></td>
   </tr>
-  <tr>
-    <td align="center"><strong>Parking counter-clockwise</strong><img src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/Counter%20Clockwise.png" width="2500"></td>
+  <tr><td>Above image shows Step 3 of parking where the robot has guided itself following the fixed offset off the wall (in the left, in this case) and using the magenta ROI (on the right, in this case) to position itself close to the first magenta block</td>
   </tr>
 </table>
+
 
 ## Microcontroller Code (Arduino Nano)
 
