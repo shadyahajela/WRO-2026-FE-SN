@@ -661,6 +661,12 @@ Iteration 1 had 2 distinct states
 - `kp_turn` is the proportional gain constant for  proportional (P) control, consistent with the steering approach used elsewhere in the system
 - The turn is considered complete once heading error is within 2°, at which point the robot returns to STRAIGHT and resets its tracking flags
 
+<table>
+  <tr>
+    <td align="center"><strong>Flowchart - Open Challenge</strong><br/><img src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/flowchart/open_challenge_state_flow.png" width="600"></td>
+  </tr>
+</table>
+
 ## 3.3 Obstacle Challenge Algorithm
 
 **Pass rule:** green blocks are passed on the left, red blocks are passed on the right.
