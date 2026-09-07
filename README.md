@@ -688,10 +688,10 @@ Iteration 1 had 2 distinct states
 
 ### 3.3.2 Iteration 2,  Dual-Axis "Pulling" Control
 
-<table>
+<table align="center">
   <tr>
-    <td align="center"><strong>Parking clockwise</strong><img width="400" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/obsg.png" /></td>
-    <td align="center"><strong>Parking counter-clockwise</strong><img width="400" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/obsr.png" /></td>
+    <td align="center"><strong>Parking clockwise</strong><br/><img width="400" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/obsg.png" /></td>
+    <td align="center"><strong>Parking counter-clockwise</strong><br/><img width="400" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/obsr.png" /></td>
   </tr>
 </table>
 
@@ -727,18 +727,6 @@ Iteration 1 had 2 distinct states
 - Turning no longer depends on constant motor speed, wheel grip, or battery voltage, and generalizes across corner shapes without retuning
 - No fixed duration to separately tune for Obstacle Challenge's corner geometry, since heading is now the closing condition
 
-### Obstacle-Clear Behavior
-
-No explicit "cleared" trigger exists,  obstacle avoidance is recomputed fresh every single frame based on whether a red or green block is currently visible above the detection threshold. The moment a block's contour area drops below that threshold,  out of frame, passed, or occluded,  the very next frame simply falls through to wall-following instead, with no dedicated timer or debounce needed for the handoff.
-
-### Corner Safety Layer
-
-<img width="400" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/obstacle%20edge%20case%20detection.png" />
-
-- Independent of whichever behavior is currently driving steering, four small ROIs step diagonally in from each top corner of the frame, checking how "full" of wall color they are
-- A fully filled side nudges steering away from it more strongly than a partially filled reading; this correction is added on top of the frame's already-computed steering value, before the final clamp
-- Runs every frame except while parked, acting as a standing safety margin against cutting a corner too tightly, on top of and independent from the primary steering decision
-
 ### 3.3.4 State Machine
 
 Same two core behaviors as Open Challenge (wall-following and turning), with additional states layered in for obstacles, wrong-side blocks, and parking:
@@ -757,27 +745,45 @@ Parking state initiates when the 12th floor line is read. Parking is achieved by
 
 <table>
   <tr>
-    <td align="center"><strong>Parking clockwise</strong><img src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/Clockwise.png" width="600"></td>
     <td align="center"><strong>Parking counter-clockwise</strong><img src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/Counter%20Clockwise.png" width="600"></td>
+    <td align="center"><strong>Parking clockwise</strong><img src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/Clockwise.png" width="600"></td>
   </tr>
 </table>
 
 1. Continue straight (IMU guided) until a small ROI detect the wall ahead to stop the robot at a fixed position 
 2. Turn 90 degrees (IMU guided) in the direction of the parking blocks
-3. a - Counter Clock-wise: Continue straight ahead towards the parking blocks by following a fixed offset against the wall until the robot positions against the first parking block
-3. B - Clock-wise: Continue straight ahead towards the parking blocks by following a fixed offset against the walls until the robot sees the orange turn line on the o
-4. Depending on the direction, move forward or backward straight until the robot positions itself ahead of the second parking block. This requires the camera to detect the second parking block in an ROI on the side
-5. Execute a timed reverse double turn into the parking area similar to we perform parallel parking in real life
+3. a - Counter Clock-wise: Continue straight ahead towards the parking blocks by following a fixed offset against the wall until the robot positions just before  the first parking block which detects magenta pixels in an ROI on the center right
+3. b - Clock-wise: Continue straight ahead towards the parking blocks by following a fixed offset against the walls until the robot sees the orange turn line in the bottom ROI
+4. a - Counter Clock-wise: Move forward fixed distance until the robot is just after the second parking block
+5. b - Clock-wise: Move reverse until the second parking blocks comes into view. Then move forward fixed distance until the robot is just after the second parking block
+6. Execute a timed reverse double turn into the parking area similar to we perform parallel parking in real life
 
 <table>
   <tr>
     <td align="center"><strong>Parking clockwise</strong><br/>
-    <img width="800" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/parking%20between.png" /></td>
+    <img width="600" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/parking%20between.png" /></td>
   </tr>
   <tr><td>Above image shows Step 3 of parking where the robot has guided itself following the fixed offset off the wall (in the left, in this case) and using the magenta ROI (on the right, in this case) to position itself close to the first magenta block</td>
   </tr>
 </table>
 
+### 3.3.6 Edge Case Handling
+
+**Prevent accidental running into walls**
+
+<img width="400" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/obse.png" />
+
+- Independent of whichever behavior is currently driving steering, 2 small square ROIs arranged diagonally on either sides check how "full" of wall color they are
+- A fully filled side nudges steering away from it more strongly than a partially filled reading; this correction is added on top of the frame's already-computed steering value, before the final clamp
+- This logic runs on top of and independent of primary steering decision in every frame except while parked, acting as a standing safety margin against running into a wall or cutting a corner too tightly
+
+**Navigating an obstacle when it is too close to the wall ahead**
+
+<img width="400" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/obstacle%20edge%20case%20detection.png" />
+
+- This logic runs when the "early line ROI" detect a colored floor line and when a specific block (Green during Counter Clockwise and Red during Clockwise) is detected ahead which would make it difficult for the robot to navigate between the wall ahead and the block
+- When this condition is met, the robot drives straight ahead until the nudge ROI is filled with black and the color block is not in view anymore
+- Then robot executes a turn in the direction of travel until the nudge ROI does not see black 
 
 ## Microcontroller Code (Arduino Nano)
 
