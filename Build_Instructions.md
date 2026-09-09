@@ -1,4 +1,4 @@
-# 8. Building Instructions
+# Assembly Instructions
 
 **Step 0: Print the 3D parts**
 

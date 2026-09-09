@@ -1,17 +1,11 @@
-Engineering materials
+Team Sub-Atomica
 ====
 
-This repository contains engineering materials of a self-driven vehicle's model participating in the WRO Future Engineers competition in the season 2026.
+This repository contains the engineering documentation and our journey of building an autonomous vehicle to compete at the 2026 WRO Future Engineers competition.
 
-## Content
+<p align="center">
+<img width="562" height="507" alt="image" src="https://github.com/user-attachments/assets/5c8130d9-c9df-4284-a268-e8d9e77e684b" />
 
-* `t-photos` contains photos of the team.
-* `v-photos` contains 6 photos of the vehicle (from every side, from top and bottom)
-* `video` contains the video.md file with the link to a video where driving demonstration exists
-* `schemes` contains one or several schematic diagrams in form of JPEG, PNG or PDF of the electromechanical components illustrating all the elements (electronic components and motors) used in the vehicle and how they connect to each other.
-* `src` contains code of control software for all components which were programmed to participate in the competition
-* `models` is for the files for models used by 3D printers, laser cutting machines and CNC machines to produce the vehicle elements. If there is nothing to add to this location, the directory can be removed.
-* `other` is for other files which can be used to understand how to prepare the vehicle for the competition. It may include documentation how to connect to a SBC/SBM and upload files there, datasets, hardware specifications, communication protocols descriptions etc. If there is nothing to add to this location, the directory can be removed.
 
 ## Introduction
 
@@ -35,16 +29,32 @@ Our robot is called Jadoo which means magic in Hindi. The name comes from a popu
 
 **Dimensions**
 
-  Width: 12 cm                     
-  Length: 23 cm                    
-  Height: 17 cm (Without wire)      
-          20 cm (With Cam0era wire)  
+| **Specification** | **Measurement** |
+|---|---|
+| **Width** | 12 cm |
+| **Length** | 23 cm |
+| **Height** | 17 cm (Without wire) |
+| | 20 cm (With Camera wire) |
+| **Weight** | About 800 grams |
           
 The Width helps to get around tight areas and the height gives a low base with a more balanced center of gravity all while being easy to maneuver due to the length. 
 
+## Open challenge videos
+[![Watch the video](https://github.com/user-attachments/assets/bb547e53-6020-4515-87ad-47aec5ea7645)](https://www.youtube.com/watch?v=8OkpqqfYOhU )
 
-</br>
+## Obstacle challenge video
+[![Watch the video](https://github.com/user-attachments/assets/e8f30f3e-51ba-4644-936d-f1f42620b62b)](https://www.youtube.com/watch?v=r0wWpeo_AAc)
 
+
+## Content
+
+* `t-photos` contains photos of the team.
+* `v-photos` contains 6 photos of the vehicle (from every side, from top and bottom)
+* `video` contains the video.md file with the link to a video where driving demonstration exists
+* `schemes` contains one or several schematic diagrams in form of JPEG, PNG or PDF of the electromechanical components illustrating all the elements (electronic components and motors) used in the vehicle and how they connect to each other.
+* `src` contains code of control software for all components which were programmed to participate in the competition
+* `models` is for the files for models used by 3D printers, laser cutting machines and CNC machines to produce the vehicle elements. If there is nothing to add to this location, the directory can be removed.
+* `other` is for other files which can be used to understand how to prepare the vehicle for the competition. It may include documentation how to connect to a SBC/SBM and upload files there, datasets, hardware specifications, communication protocols descriptions etc. If there is nothing to add to this location, the directory can be removed.
 
 # 1. Mobility Management
 
@@ -127,7 +137,7 @@ We used a metal WLTOYS 144001 differential in our robot, allowing the left and r
 
 **Steering:** Initially Parallel Steering, then changed to Ackermann Steering Geometry, prototyped with LEGO technic parts and later made with 3D printed parts. Ackermann was especially important for obstacle navigation and parking, where precise control and a small turning radius are essential. We also considered parallel steering because it was simpler to implement, but chose Ackermann as a calculated risk for its improved maneuverability. Our implementation uses a custom 3D-printed Ackermann steering mechanism, we used Onshape to experiment with different pivot points, linkage positions, and steering angles throughout the design process.
 
-Through 2 iterations, we shortened both rods and increased the length of the side rods to achieve a smaller turning radius while keeping the mechanism       compact. In our first iteration we made our tabs 2mm longer and the neck of the robot, this gave us a 15 degree increase in our turning radius. We also experimented with shortening the rods to make our wheels streamlined and finalized with 9.53cm for the long shaft and 8.5cm for the short one. A major constraint was the chassis neck, which limited the steering angle because the wheels could collide with it. We therefore cut part of the chassis around the steering area to provide sufficient clearance.
+Through 2 iterations, we shortened both rods and increased the length of the side rods to achieve a smaller turning radius while keeping the mechanism compact. In our first iteration we made our tabs 2mm longer and the neck of the robot smaller, this gave us a 15 degree increase in our turning radius. We also experimented with shortening the rods to make our wheels streamlined and finalized with 9.53cm for the long shaft and 8.5cm for the short one. A major constraint was the chassis neck, which limited the steering angle because the wheels could collide with it. We therefore cut part of the chassis around the steering area to provide sufficient clearance.
 
 **Calibration and Implementation:**
 To achieve accurate and consistent steering, we used a combination of CAD adjustments and physical testing:
@@ -139,15 +149,14 @@ To achieve accurate and consistent steering, we used a combination of CAD adjust
 
 <img width="275" height="489" alt="IMG_4013" src="https://github.com/user-attachments/assets/f28c9ddb-460f-42f4-8379-5101067f59bd" />
 <img width="650" height="424" alt="image" src="https://github.com/user-attachments/assets/9caed275-5877-459d-ba2e-db10171e0d1b" />
-
-<img src="v-photos/ackerman steering.png" alt="Ackerman Steering">
+<img width="1354" height="491" alt="image" src="https://github.com/user-attachments/assets/d49af80e-b820-4053-83cf-8057a6c45917" />
 
 *This was an early prototype of the Ackerman Steering model before we added it to the first iteration of our Lego car chassis.*
 
 
 ### Steering Motor
 
-We chose the MG90S Micro Servo for precise steering and weight reduction. The compact size and PWM interface make the MG90S easy to integrate and control using the Arduino Nano. It provides sufficient torque to steer the front wheels accurately and responsively. Its fast response and metal gear construction provide reliable and stable steering during turns and lane changes. The MG90S is widely used in hobby robotics, making replacement parts, mounting hardware, and documentation readily available. Additionally while testing it with our code for control we were able to make it work 90% of the time, upon investigating we found a fault with the power system in the testing module. 
+We chose the MG90S Micro Servo for precise steering and weight reduction. The compact size and PWM interface make the MG90S easy to integrate and control using the Arduino Nano. It provides sufficient torque to steer the front wheels accurately and responsively. Its fast response and metal gear construction provide reliable and stable steering during turns and lane changes. The MG90S is widely used in hobby robotics, making replacement parts, mounting hardware, and documentation readily available. Additionally while testing it with our code for control we were able to make it work 90% of the time, upon investigating we found a fault with the power system in the testing module which we solved by adjusting our wires. 
 
   <table>
   <tr>
@@ -187,8 +196,7 @@ An alternative would be the MG996R servo, which provides higher torque and more 
 | Length | 230 | Tight turns and component fit |
 | Height | 200 | (Including camera wire) |
 
-**Design Overview:**
-wnog
+### Design Overview:
 
 **Iteration 1: LEGO**
 
@@ -245,16 +253,20 @@ Accepted Trade-Offs:
 
 Our chassis was designed on Onshape and printed using Carbon fiber, as it is light and resistant to snapping, which helps in thin and high tension areas like the neck of our robot. Other than the chassis itself the other 3D printed components use PLA and are designed on Onshape as well.
 
+## 1.4 Torque and Speed reasoning
+
+<img width="870" height="645" alt="image" src="https://github.com/user-attachments/assets/f74db39f-b30e-49f5-a9ce-666f96bb5f14" />
+
+Our torque and speed reasoning lists the given parameters, we are able to calculate the max speed, the robots acceleration as well as the gives the minimum torque required to move our robot, allowing us to control speed. We are also able to calculate the cruising torque and stall torque which we used for selecting our motor. Based on our robot's total mass of 0.8 kg and wheel diameter of 0.056 m, we calculated a required motor torque of approximately 0.0117 N·m during acceleration, which is well within our motor's stall torque of 0.0833 N·m, giving a safety margin of roughly 7x (required torque is only ~14% of available stall torque).
 
 
-# 2. Power Systems and Architecture
+# 2. Power Systems and Hardware Architecture
 
 For the car to know what its doing, we need input and power.
 
 Objective: 
-  - Incorporate camera sensor and IMU
-  - Create power system architecture for robot
-
+  - Select the right hardware / electronic components for the entire sensor input processing and actuator control in real-time 
+  - Supply adequate power to all these components
 
 ## 2.1 Power Source
 
@@ -279,15 +291,12 @@ Objective:
   </tr>
   </table>
 
-The power system is essential to the robot’s ability to operate reliably throughout the competition. Our robot is powered by a 3-cell (3S) Lithium Polymer (LiPo) battery. The battery provides a nominal voltage of 11.1 V and a fully charged voltage of 12.6 V. Its high discharge capability allows it to supply sufficient current to the motors and other components. The battery’s high energy density provides a good balance between runtime, weight, and available power, making it well suited for a mobile competition robot.
+The power system is essential to the robot’s ability to operate reliably throughout the competition. Our robot is powered by a 3-cell (3S) Lithium Polymer (LiPo) battery. The battery provides a nominal voltage of 11.1 V and a fully charged voltage of 12.6 V. Its high discharge capability allows it to supply sufficient current to the motors and other components. The battery’s high energy density provides a good balance between runtime, weight, and available power, making it well suited for a mobile competition robot. A rocker switch is connected directly to the power source independent of the code to switch on and off the robot. 
 
-  The JGA25-371 motors operate from the 12V supply provided by the battery, while the L298N motor driver regulates the power delivered to the motors based on commands from the Arduino Nano. The higher voltage of the 3S battery allows the motors to operate without requiring a step-up converter, simplifying the power system and reducing unnecessary conversion losses. A step-down converter is used to reduce the battery voltage to the appropriate levels required by the Raspberry Pi 5, Arduino Nano, camera, IMU, and other electronics. This separates the high-current motor supply from the lower-voltage electronics while allowing the entire robot to be powered from a single battery.
-
-  The Raspberry Pi 5 serves as the vehicle’s main processing unit and requires a stable 5V supply. The step-down converter provides the required regulated voltage, ensuring that the Raspberry Pi and other electronics receive consistent power during operation. This setup allows the robot to run its sensors, process camera data, control the motors, and make navigation decisions without relying on separate batteries for each subsystem.
+The JGA25-371 motor operate from the 12V supply provided by the battery, while the L298N motor driver regulates the power delivered to the motors based on commands from the Arduino Nano. The higher voltage of the 3S battery allows the motors to operate without requiring a step-up converter, simplifying the power system and reducing unnecessary conversion losses. A step-down converter is used to reduce the battery voltage to the appropriate levels required by the Raspberry Pi 5, Arduino Nano, camera, IMU, and other electronics. This separates the high-current motor supply from the lower-voltage electronics while allowing the entire robot to be powered from a single battery.
 
 
-
-  **Motor Driver:** L298N
+**Motor Driver:** L298N
   
   <table>
   <tr>
@@ -308,7 +317,7 @@ The power system is essential to the robot’s ability to operate reliably throu
   </tr>
   </table>
 
-  We chose the L298N motor driver because it provides reliable control of our JGA25-371 DC motors while being compatible with the Arduino Nano. It supports the 12V supply from our 3-cell LiPo battery and allows the Arduino to control motor direction and speed through its PWM inputs. This provides a simple and reliable connection between the robot’s power system and drivetrain, making it well suited for our differential drive system.
+We chose the L298N motor driver because it provides reliable control of our JGA25-371 DC motor while being compatible with the Arduino Nano. It supports the 12V supply from our 3-cell LiPo battery and allows the Arduino to control motor direction and speed through its PWM inputs. This provides a simple and reliable connection between the robot’s power system and drivetrain, making it well suited for our differential drive system. The driver has a voltage drop in its internal transistors which causes us to not achieve its full potential, but we were willing to make a trade-off as we were content with what we were able to use it for.  
 
 
 OLD MOTOR DRIVER IMAGE: DRV8871
@@ -317,7 +326,7 @@ OLD MOTOR DRIVER IMAGE: DRV8871
 
 We used DRV8871 in earlier iterations of the robot because of its compactness and its single motor control. However, it kept burning out due to motor feedback coming back to the driver. Motor feedback occurs when a motor is forced to move, and was probably caused by the constant pulling of the robot we did when testing. After further research, we found out that this feedback was a common problem with the DRV8871, so we decided to move to the L298N motor driver. Although it is much larger and bulkier, we had considerable space for the motor driver so it wasn't an issue. The L298N also has a heatsink, so overheating is not a problem.
 
-  ## 2.2 Sensor and Camera
+## 2.2 Sensor and Camera
   
   **SainSmart Wide-Angle Camera:** 
 
@@ -340,25 +349,25 @@ We used DRV8871 in earlier iterations of the robot because of its compactness an
   </tr>
   </table>
 
-  **Selection Reasoning:** 
+**Selection Reasoning:** 
 
-  160° wide field of view captures more of the course, reducing blind spots and improving environmental awareness.
-  5MP resolution provides enough detail to reliably distinguish course features and colored markers.
-  1080p at 30 FPS provides responsive visual data for real-time image processing and object detection.
-  Compact and lightweight design reduces its impact on vehicle weight and balance while allowing flexible mounting.
+- 160° wide field of view captures more of the course, reducing blind spots and improving environmental awareness.
+- 5MP resolution provides enough detail to reliably distinguish course features and colored markers.
+- 1080p at 30 FPS provides responsive visual data for real-time image processing and object detection.
+- Compact and lightweight design reduces its impact on vehicle weight and balance while allowing flexible mounting.
 
-  This setup provides a 160° wide-angle view that increases the robot's visual coverage during both the Open Challenge and Obstacle Challenge. The camera supplies visual information about walls, pillars, colored markers, parking spaces, and lane lines, which is combined with other sensor data to support navigation and decision-making. The main tradeoff is balancing wider coverage with image processing requirements, so the selected resolution and frame rate provide sufficient detail and responsiveness without unnecessarily increasing processing demands.
+This setup provides a 160° wide-angle view that increases the robot's visual coverage during both the Open Challenge and Obstacle Challenge. The camera supplies visual information about walls, pillars, colored markers, parking spaces, and lane lines, which is combined with other sensor data to support navigation and decision-making. The main tradeoff is balancing wider coverage with image processing requirements, so the selected resolution and frame rate provide sufficient detail and responsiveness without unnecessarily increasing processing demands.
 
-  The camera is mainly used for the following tasks:
+The camera is mainly used for the following tasks:
 
-  - Detect and determine wall positions.
-  - Identify pillar colors and types.
-  - Recognize parking zones.
-  - Track path lines and boundaries.
+- Detect and determine wall positions.
+- Identify pillar colors and types.
+- Recognize parking zones.
+- Track path lines and boundaries.
 
 **BNO055 Inertial Measurement Unit (IMU):** 
 
-  <table>
+<table>
   <tr>
     <td align="center" width="300" >
       <img width="640" height="640" alt="image" src="https://github.com/user-attachments/assets/e744f7c4-f232-47a1-849b-ada9e6dda31e" />
@@ -374,18 +383,17 @@ We used DRV8871 in earlier iterations of the robot because of its compactness an
       </ul>
     </td>
   </tr>
-  </table>
+</table>
 
 **Selection Reasoning:** 
 
 Considering we wanted to have a relative compass to reduce additional code in the Arduino, we chose the BNO055. The BNO055 is a compact 9-axis IMU that combines a3-axis accelerometer, 3-axis gyroscope, and 3-axis magnetometer with an onboard processor for sensor fusion. It provides orientation data such as heading,       Euler angles, linear acceleration, and gravity direction, reducing the need for complex external calculations.
     
-We mounted the BNO055 near the center of the chassis to provide stable and consistent measurements. It communicates with the Arduino Nano through the I²C interface, continuously providing real-time orientation and angular velocity data. This helps the robot maintain an accurate heading and make smoother steering adjustments, which are especially important during obstacle navigation.
+We mounted the BNO055 near the center of the chassis to provide stable and consistent measurements. It communicates with the Arduino Nano through the I²C interface, continuously providing real-time orientation and angular velocity data. This helps the robot maintain an accurate heading and make smoother steering adjustments, which are especially important during obstacle navigation.  
   
-  
-  ## 2.3 Processing Units
+## 2.3 Processing Units
 
-  **Single Board Computer: Raspberry Pi 5**
+**Single Board Computer: Raspberry Pi 5**
 
   <table>
   <tr>
@@ -406,20 +414,20 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
   </tr>
   </table>
 
-  *Subsystem Integration:*
-  The Raspberry Pi 5 acts as the robot’s primary processing unit, handling high-level decision-making, image processing, and sensor-data integration. Its processing capability allows it to run real-time vision, mapping, obstacle detection, and path-planning tasks while communicating with the Arduino Nano for low-level control.
+*Subsystem Integration:*
+The Raspberry Pi 5 acts as the robot’s primary processing unit, handling high-level decision-making, image processing, and sensor-data integration. Its processing capability allows it to run real-time vision, mapping, obstacle detection, and path-planning tasks while communicating with the Arduino Nano for low-level control.
 
-  *Hardware and Software Architecture:*
-  The Raspberry Pi 5’s quad-core Arm Cortex-A76 CPU and 8GB of RAM provide sufficient processing performance for the computational demands of the robot. Its compact form factor also allows it to be mounted directly onto the chassis without significantly increasing the vehicle’s size or weight. It communicates with the Arduino Nano through a serial connection, creating a modular architecture where high-level processing and low-level control are separated.
+*Hardware and Software Architecture:*
+The Raspberry Pi 5’s quad-core Arm Cortex-A76 CPU and 8GB of RAM provide sufficient processing performance for the computational demands of the robot. Its compact form factor also allows it to be mounted directly onto the chassis without significantly increasing the vehicle’s size or weight. It communicates with the Arduino Nano through a serial connection, creating a modular architecture where high-level processing and low-level control are separated.
 
-  *Iterations and Trade-Offs:*
-  We initially tested a Raspberry Pi 4 to reduce power consumption, but testing showed that its lower processing performance caused slower image processing and reduced responsiveness during real-time vision and navigation tasks. We therefore changed to the Raspberry Pi 5, accepting higher power consumption in exchange for significantly improved processing performance and more reliable real-time operation.
+*Iterations and Trade-Offs:*
+We initially tested a Raspberry Pi 4 to reduce power consumption, but testing showed that its lower processing performance caused slower image processing and reduced responsiveness during real-time vision and navigation tasks. We therefore changed to the Raspberry Pi 5, accepting higher power consumption in exchange for significantly improved processing performance and more reliable real-time operation.
 
-  *Risk Analysis and Reliability:*
-  Using the Raspberry Pi 5 reduces the risk of processing bottlenecks affecting navigation and vision performance. Separating high-level processing from the Arduino Nano’s low-level control also prevents computationally intensive tasks from directly interfering with motor and steering control, improving overall system reliability.
+*Risk Analysis and Reliability:*
+Using the Raspberry Pi 5 reduces the risk of processing bottlenecks affecting navigation and vision performance. Separating high-level processing from the Arduino Nano’s low-level control also prevents computationally intensive tasks from directly interfering with motor and steering control, improving overall system reliability.
   
 
-  **Microcontroller:** Arduino Nano
+**Microcontroller:** Arduino Nano
 
   <table>
   <tr>
@@ -439,27 +447,25 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
     </td>
   </tr>
   </table>
-
-  *Subsystem Integration:*
-
-  The Arduino Nano was selected as the robot’s low-level controller to handle time-sensitive tasks such as motor control, steering, and encoder/sensor input. This architecture separates high-level decision-making from low-level control, allowing the Raspberry Pi 5 to focus on vision processing, navigation, and path planning while the Arduino maintains consistent motor and steering responses.
-
-  *Hardware and Software Architechture:*
-
-  The Arduino Nano communicates with the Raspberry Pi 5 through a serial connection, creating a modular hardware and software architecture. This reduced the risk of timing conflicts caused by running motor-control tasks alongside computationally intensive processes on the Raspberry Pi. It also allows each subsystem to be tested independently, making troubleshooting and future modifications easier.
-
-  *Iterations and Trade-Offs:*
-
-  Our initial design used a microbit, but research showed that the Arduino Nano offered greater flexibility for external hardware and simpler bidirectional communication with the Raspberry Pi 5. We therefore changed to the Arduino Nano, trading the microbit’s built-in buttons and LEDs for improved subsystem integration and expandability.
-
-  The control system was then iteratively tested and adjusted to improve motor response, steering accuracy, and communication reliability. Using a dedicated microcontroller introduced additional hardware and communication complexity, but provided more predictable real-time control and reduced the dependence of critical drivetrain functions on the Raspberry Pi’s processing workload.
-
-  *Risk Analysis and Reliability:*
-
-  This subsystem architecture improves reliability by isolating critical low-level control from higher-level software. If the vision or navigation software requires significant processing, the Arduino can continue executing motor and steering commands without relying on continuous high-level computation. This separation therefore supports more consistent movement and provides a more robust architecture for the challenges defined by WRO Future Engineers.
   
+*Subsystem Integration:* 
 
-  **Expansion Board:** Arduino Nano Shield
+ The Arduino Nano was selected as the robot’s low-level controller to handle time-sensitive tasks such as motor control, steering, and encoder/sensor input. This architecture separates high-level decision-making from low-level control, allowing the Raspberry Pi 5 to focus on vision processing, navigation, and path planning while the Arduino maintains consistent motor and steering responses.
+
+*Hardware and Software Architecture:*
+
+The Arduino Nano communicates with the Raspberry Pi 5 through a serial connection, creating a modular hardware and software architecture. This reduced the risk of timing conflicts caused by running motor-control tasks alongside computationally intensive processes on the Raspberry Pi. It also allows each subsystem to be tested independently, making troubleshooting and future modifications easier. It also displays steering values on the 1.12" OLED screen, we use it for understanding what the robot is thinking and troubleshoot. 
+
+*Iterations and Trade-Offs:*
+
+Our initial design used a microbit, but research showed that the Arduino Nano offered greater flexibility for external hardware and simpler bidirectional communication with the Raspberry Pi 5. We therefore changed to the Arduino Nano, trading the microbit’s built-in buttons and LEDs for improved subsystem integration and expandability. The control system was then iteratively tested and adjusted to improve motor response, steering accuracy, and communication reliability. Using a dedicated microcontroller introduced additional hardware and communication complexity, but provided more predictable real-time control and reduced the dependence of critical drivetrain functions on the Raspberry Pi’s processing workload.
+
+*Risk Analysis and Reliability:*
+
+This subsystem architecture improves reliability by isolating critical low-level control from higher-level software. If the vision or navigation software requires significant processing, the Arduino can continue executing motor and steering commands without relying on continuous high-level computation. This separation therefore supports more consistent movement and provides a more robust architecture for the challenges defined by WRO Future Engineers.
+
+
+**Expansion Board:** Arduino Nano Shield
 
   <table>
   <tr>
@@ -482,15 +488,17 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
   * It simplifies wiring by providing accessible connection points for the Arduino Nano’s input and output pins, while also supporting power distribution to connected components.
   * This makes the system easier to assemble, maintain, and modify, while providing reliable connections between the Arduino Nano and the robot’s hardware.
 
-  ## 2.4 Circuit Diagram
+## 2.4 Circuit Diagram
 
   **Wiring Diagram:**
 
   <img width="1224" height="1763" alt="Wiring Diagram (2)" src="https://github.com/user-attachments/assets/4c6feabf-4b5b-4540-9d90-26b686d79076" />
 
-  ## 2.5 Power Consumption
+  The Wiring diagram shows the connections to the different components that are located in the robot.
+  
+## 2.5 Power Consumption
 
-  | Component | Supply (V) | Typical Current (A) | Peak Current (A) | Typical Power (W) |
+| Component | Supply (V) | Typical Current (A) | Peak Current (A) | Typical Power (W) |
 |------------|------------|---------------------|------------------|-------------------|
 | Raspberry Pi 5 | 5 | 0.80 | 5.00 | 4.00 |
 | Arduino Nano | 5 | 0.019 | 0.030 | 0.095 |
@@ -501,19 +509,14 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
 | L298N Motor Driver | 12 | 0.02 | 0.04 | 0.24 |
 | Arduino Nano Shield | 5 | 0.019 | 0.030 | 0.095 |
 | Step-Down Converter | — | — | — | η ≈ 88% |
-  
 
+## 2.6 Power System Architecture
 
-###  Power System Architecture
+This diagram shows how the 12V battery supplies power to the DC motor through the motor driver, and the step down buck converter which them supplies 5V power to the rest of the components. 
 
 <img width="1167" height="607" alt="image" src="https://github.com/user-attachments/assets/c2637fd0-5c40-4e5f-b6e0-8fb43fe7991f" />
 
-
-# 3. Software Architecture
-
-# 4. Source Code
-
-# 5. List of Components
+## 2.7 List of Components
 
 | Major components                                                 | Reference Cost in CAD<br>\- As of Sep 1, 2026<br>\- Taxes not included | Purchase Link for Future Reference                                                            |
 | ---------------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
@@ -532,18 +535,307 @@ We mounted the BNO055 near the center of the chassis to provide stable and consi
 | Short USB to USB-C cable                                         | $11.39                                                                 | [Amazon.ca](https://www.amazon.ca/dp/B0DG8J6S1G)                                              |
 | Rocker Switch                                                    | $2.65                                                                  | [aliexpress.com](https://www.aliexpress.com/item/1005007044175800.html)                       |
 | Push Button breakout module                                      | $1.52                                                                  | [aliexpress.com](https://www.aliexpress.com/item/32820437436.html)                            |
-
 | Lego wheels, axles and connectors                                | $50.00                                                                 | Approximately                                                                                 |
 | 3D printed parts for the chassis                                 | $25.00                                                                 | Approximately for one spool of PLA filament                                                   |
 | Total                                                            | $473.49                                                                |                                                                                               |
 
-# 7. 3D Model Files
 
-## 7.1 Onshape CAD
+# 3. Software Architecture
+
+## 3.1 Code Origins
+Following our research of other teams our exploration of software development had humble origins since many of the concepts required to build and program an autonomous vehicle were new to us.
+
+1. Started with just a raspberry pi and a wide-angle camera to detect walls and objects
+2. Added proportional steering angle calculation to drive a virtual servo
+3. Had a Micro\:bit microcontroller connected to the Raspberry Pi over USB for serial connection, and coded it to receive the servo values from the Pi to drive an actual servo
+4. Added a DC motor and driver to the microcontroller for vehicle movement, and ensured all of these worked in tandem
+5. Put this entire setup on a Lego chassis for iteration 1 
+6. Tested this iteration on a table-top test bench made out of Lego with actual walls and 3 printed color blocks to tune the steering values for walls and obstacles.
+7. We then changed to Arduino since it was harder to connect components to a Micro\:bit directly and the expansion board we used had problems driving the servo motor consistently
+
+
+## 3.2 Open Challenge Algorithm
+
+We started by defining a Frames class which 
+
+- Encapsulated a Region of Interest (ROI) 
+- Initialization included defining the boundary coordinates of the ROI and the colors it must be able to detect
+- Had functions to return all the colored pixels matching a specific color range in HSV, return contours by matching adjacent colored pixels, return the biggest contour, return the area of all contours
+
+### 3.2.1 Iteration 1
+
+We spent a lot of time in open challenge iterations since the idea was to have a solid foundation for obstacle challenge. The frames class and the state transitions must be reusable for obstacle challenge where needed
+Iteration 1 had 2 distinct states
+
+- STRAIGHT - Drive the robot straight following the walls
+- TURN - When a colored line is seen, check if it is safe to turn and perform a timed turn
+
+**MAIN LOOP**
+
+<img width="600" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/open%20challenge%20iteration%201.png" />
+
+- Two rectangular ROIs placed on the left and right sides of the frame, each able to detect black colored pixels
+  - Keep a record of the number of black pixels detected within each ROI which represent how much of the inner and outer walls are visible to the camera on each side
+- One rectangular ROI placed on the bottom of the frame to detect orange and blue colored pixels > 200 (to avoid detecting noise)
+  - If Orange was detected first, set direction to clockwise (CW) for the robot to travel
+  - If Blue was detected, set direction to counter-clockwise (CCW)
+  - As soon as a colored line is detected, since it may take several frames to pass over that line, use a timer to avoid reading the same line again
+  - Keep track of number of orange and blue lines crossed
+- If colored line was detected
+  - If there is no wall in the direction of travel, initiate TURN state
+- Else
+  - Initiate STRAIGHT state
+- If the number of lines passed > 12, stop the robot after a fixed time (depending on speed) to position it in the starting section
+- Compute steering value, speed, a direction value (forward/reverse/stop, chosen by the Pi based on what the vehicle currently needs to do), the current lap-line count, and the current state are packed into a single message and sent over USB serial (19200 baud) to an Arduino Nano, which handles the physical motor and servo output
+
+**STRAIGHT**
+<br/>
+- `Steering error` was calculated as `right-side black pixel count - left-side black pixel count`
+- If `Steering error` was positive 
+  - This means more wall visible on the left 
+  - Vehicle should steer right
+- If `Steering error` was negative
+  - This means more wall visible on the right
+  - Vehicle should steer left
+- The steering should be proportional to the error, so a simple proportional (P) controller was used meaning the steering angle was simply the error multiplied by a constant gain value (KP),  the further off-center the pixel counts were, the harder the robot steered
+  - KP constant is simply calculated by scaling the error down to the range of the steering margin (45)
+  - In this case, the error was in the range of 6000 pixels nominally
+  - So we started with a KP of 30 / 6000 = 0.005 and then tuned it from there
+- In summary `Steering angle = Steering error * kp`
+
+**TURN**
+
+- If a `wall missing` condition is detected in the direction of turn, turn steering hard for a fixed amount of time.
+  - No feedback mechanism was used for the turn 
+- The time was tuned until the turn completed properly 
+
+**Observations and improvements made**
+
+- Problem: Bright lighting conditions caused the pixel detection to be fuzzy
+  - **Idea implemented**: Lowered the camera angle by about 8 degrees so as to catch less of ambient light while still being able to see the walls
+- Problem: It would be ideal for a vehicle to travel closer to the inner wall to save time. However, if the algorithm just measured raw pixels on either side, a robot pointed straight but traveling closer to one wall would report a large error even though no correction was actually needed.
+  - **Idea implemented**: Add an offset to the pixel count on the outer perimeter to guide the robot to run close to the inner wall
+  - **Idea for next iteration**: Alternatively, derive the wall geometry/position rather than raw pixel volume, so the vehicle would travel straight regardless of the robot's exact distance from a wall or the lighting conditions on a given day
+- Problem: While a simple proportional (P) controller was mostly sufficient, the robot steering wasn’t as smooth as we wanted it to be, especially after completing a turn. 
+  - **Idea for next iteration**: Add a Derivative (D) to the controller which would account for the rate of change of error to damp out sudden changes in steering and make for smoother steering
+
+### 3.2.2 Iteration 2
+
+**STRAIGHT**
+
+<img width="600" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/open%20challenge%20iteration%202%20and%203.png" />
+
+- Replaced the two side ROIs with a single thin horizontal ROI band closer spanning the full width of the frame. This ROI was placed just at the vertical center so the algorithm can sufficiently look ahead to calculate steering
+- Scans inward from each edge of the ROI to find the nearest wall pixel on the left half and the nearest wall pixel on the right half, on the same row, marking each as a boundary point
+- If a wall drops out of frame, the boundary point is simply the far edge of the ROI on that side
+- The midpoint between the two boundary points is the "path center"
+- The horizontal offset between this path center and the frame's true horizontal center is the steering error
+- A small dead zone (±20px) is applied around the centered wall-following error, errors inside this band are treated as zero, preventing constant tiny steering corrections once the robot is already well-centered
+
+* Added a derivative term to the corridor-center error, moving from P to PD control: `control_signal = (kp × error) + (kd × (error − previous_error))`
+  - The derivative term reacts to how quickly the error is changing frame to frame, which damps the overcorrection behavior from Iteration 1 and produces a visibly smoother line, especially noticeable at higher driving speeds where a pure-P response tends to overreact to small changes
+
+**TURN**
+
+- A turn only actually triggers after the line-detected + wall-missing condition holds continuously for a short confirmation window (0.15s), rather than on the first frame it's seen. This prevents the robot from running into corners
+
+**Observations and improvements made**
+
+- Problem: Timed turns still needed per-corner retuning, since the inner wall's length and shape vary between corners depending on the round's randomized wall configuration,  a duration tuned for one corner would overshoot or undershoot the next. Turn duration also drifted over the course of a run as battery voltage sagged and motor speed dropped slightly, or if the wheels lost grip occasionally. Duration of turn had to be adjusted every time we had to change the speed of the robot for testing
+  - **Idea for next iteration**: Use a feedback mechanism to detect when a turn ends and implement a PD controller
+
+### 3.2.3 Iteration 3 (Current)
+
+**MAIN LOOP**
+
+- Added an IMU (BNO055) to track heading (0–360°)
+  - Note: We built a utility program [bno055.py](https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/src/sensor/bno055.py) to calibrate and test the BNO055 IMU sensor. The IMU integration was also tested on the table-top test bench and tuned before the robot was tested on the field
+- Reset heading to 0 at startup
+- Each time a colored line is passed, a turn counter increments, and the target heading is set as an **absolute** multiple of 90°,  `turn_count × 90°` (mod 360°, sign flipped for CCW),  rather than the previous target plus 90°. This is to ensure small heading errors from one turn can't accumulate and drift into the next turn's target
+
+**TURN**
+
+- `Turn error` is the shortest signed angular distance between target and current heading (normalized to −180°…180°, so the robot always turns the short way)
+- `Steering value = turn error * kp_turn`
+
+- `kp_turn` is the proportional gain constant for  proportional (P) control, consistent with the steering approach used elsewhere in the system
+- The turn is considered complete once heading error is within 2°, at which point the robot returns to STRAIGHT and resets its tracking flags
+
+<table>
+  <tr>
+    <td align="center"><strong>Flowchart - Open Challenge</strong><br/><img src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/flowchart/open_challenge_state_flow.png" width="600"></td>
+  </tr>
+</table>
+
+## 3.3 Obstacle Challenge Algorithm
+
+**Pass rule:** green blocks are passed on the left, red blocks are passed on the right.
+
+### 3.3.1 Iteration 1 - Treating Obstacles as Virtual Walls
+
+**Approach**
+
+- Reused the Open Challenge STRAIGHT corridor-centering algorithm rather than building separate obstacle-handling logic
+- Red is passed on the right, so a detected red block sits to the robot's left as it passes,  its bottom-right corner (the edge nearest the robot's path) was fed in as a substitute **left-wall** boundary point
+- Green is passed on the left, so a detected green block sits to the robot's right as it passes,  its bottom-left corner was fed in as a substitute **right-wall** boundary point
+- The corridor-center calculation then treated that corner exactly like a real wall-edge point, steering around it the same way it would steer around a wall
+
+**Issues**
+
+- The corridor-centering math was tuned for two continuous, roughly parallel wall surfaces,  a single point from a small discrete block gave a much shakier corridor estimate, since the "wall" on that side was only a few centimeters wide instead of an extended surface
+- With only one corner representing the whole block, the estimated boundary jumped noticeably frame to frame as viewing angle changed on approach, so steering reacted inconsistently to what should have been a smooth approach
+- No explicit sense of distance to the block,  correction strength was identical whether the block was far away or dangerously close, since wall-following gains (tuned for gradual convergence) were being reused for what should've been a more urgent, close-range maneuver
+- Blocks near a real corner or wall created ambiguity about which "wall" the algorithm was actually reacting to, occasionally steering toward the block instead of away from it
+
+**Why We Improved**
+
+- Needed obstacle avoidance treated as its own problem with its own reference points, not a block disguised as a wall
+- Needed distance to the block to explicitly scale the strength of the correction, not just its direction
+
+### 3.3.2 Iteration 2,  Dual-Axis "Pulling" Control
+
+<table align="center">
+  <tr>
+    <td align="center"><strong>Parking clockwise</strong><br/><img width="400" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/obsg.png" /></td>
+    <td align="center"><strong>Parking counter-clockwise</strong><br/><img width="400" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/obsr.png" /></td>
+  </tr>
+</table>
+
+**Approach**
+
+- Green block: reference dot at the block's bottom-left corner, fixed target dot at the bottom-right corner of the screen
+- Red block: mirrored,  reference dot at the block's bottom-right corner, fixed target dot at the bottom-left corner of the screen
+- Horizontal (x) offset between reference and target dots drives a PD controller,  correction is added to center for red (steers right) and subtracted for green (steers left)
+- Vertical (y) offset doesn't drive steering directly,  it produces a distance falloff factor that scales the whole PD correction: strongest as the block's bottom edge nears the bottom of the frame (close), fading toward zero as it sits higher in the frame (far). This is exactly what Iteration 1 was missing
+- Overall effect is like an elastic band strung between the two dots,  as the robot approaches, the "pull" tightens and the correction strengthens, instead of a constant-strength nudge regardless of distance
+- Falls back to the same corridor-centering wall-following logic from Open Challenge whenever no block is visible, but with its own separately tuned gains,  Obstacle Challenge's field and required correction strength weren't identical to Open Challenge's, so tuning each independently gave a tighter fit for both
+- If both a red and green block are visible in the same frame, only the physically nearer one (by vertical offset) is used to compute steering that frame,  the farther block is detected but ignored until it becomes the closer one
+- Steering output is clamped to the same safe range used everywhere else in the system
+
+**Issues**
+
+- Inherited the same timed-turn unreliability as Open Challenge Iteration 2,  turn duration needed per-corner retuning and drifted with battery voltage and wheel grip over a run
+
+**Why We Improved**
+
+- Wanted the same closed-loop, drift-independent turning fix already validated in Open Challenge Iteration 3
+
+### 3.3.3 Iteration 3 (Current),  IMU Heading-Based Turns
+
+**Approach**
+
+- Kept the Iteration 2 dual-axis pulling logic and wall-following fallback unchanged
+- Replaced the fixed-duration turn with the same IMU heading-based approach as Open Challenge,  absolute cardinal target headings, incremented 90° per corner, closed-loop control to close the heading error, exiting once within tolerance rather than after a fixed time
+- Mid-turn bail-out preserved: if a red or green block becomes visible above threshold while still turning, the robot exits the turn immediately and hands back to obstacle avoidance that same frame,  reacting to a visible block takes priority over finishing a scheduled turn
+
+**Issues Resolved**
+
+- Turning no longer depends on constant motor speed, wheel grip, or battery voltage, and generalizes across corner shapes without retuning
+- No fixed duration to separately tune for Obstacle Challenge's corner geometry, since heading is now the closing condition
+
+### 3.3.4 State Machine
+
+Same two core behaviors as Open Challenge (wall-following and turning), with additional states layered in for obstacles, wrong-side blocks, and parking:
+
+- **LEAVE**,  starting state; drives straight out of the parking bay, then hands off to normal driving once clear
+- **STRAIGHT**,  corridor-centering wall-following; active by default whenever no red/green block is visible
+- **OBSTACLE**,  dual-axis pulling control; active by default whenever a red or green block is visible
+- **TURNING**,  IMU heading-based turn triggered at a lap line; exits early back to OBSTACLE if a block becomes visible mid-turn, otherwise exits to STRAIGHT once heading target is reached
+- **OBS\_CRITICAL**,  triggered by spotting a "wrong-side" block early, near an upcoming turn; holds a near-straight course via IMU-held heading until a threshold amount of wall fills the center of the frame, then forces a hard turn for a fixed duration to physically clear the block, then resumes normal driving
+- **BETWEEN**,  entered after an OBS\_CRITICAL sequence completes near the end of the run; treats every remaining block as if it were red regardless of actual color, and watches for the parking wall to appear
+- **PARK**,  final state; speed and steering held at rest
+
+### 3.3.5 PARKING
+
+Parking state initiates when the 12th floor line is read. Parking is achieved by 5 distinct maneuvers explained below
+
+<table>
+  <tr>
+    <td align="center"><strong>Parking counter-clockwise</strong><img src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/Counter%20Clockwise.png" width="600"></td>
+    <td align="center"><strong>Parking clockwise</strong><img src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/Clockwise.png" width="600"></td>
+  </tr>
+</table>
+
+1. Continue straight (IMU guided) until a small ROI detect the wall ahead to stop the robot at a fixed position 
+2. Turn 90 degrees (IMU guided) in the direction of the parking blocks
+3. a - Counter Clock-wise: Continue straight ahead towards the parking blocks by following a fixed offset against the wall until the robot positions just before  the first parking block which detects magenta pixels in an ROI on the center right
+3. b - Clock-wise: Continue straight ahead towards the parking blocks by following a fixed offset against the walls until the robot sees the orange turn line in the bottom ROI
+4. a - Counter Clock-wise: Move forward fixed distance until the robot is just after the second parking block
+5. b - Clock-wise: Move reverse until the second parking blocks comes into view. Then move forward fixed distance until the robot is just after the second parking block
+6. Execute a timed reverse double turn into the parking area similar to we perform parallel parking in real life
+
+<table>
+  <tr>
+    <td align="center"><strong>Parking clockwise</strong><br/>
+    <img width="600" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/parking%20between.png" /></td>
+  </tr>
+  <tr><td>Above image shows Step 3 of parking where the robot has guided itself following the fixed offset off the wall (in the left, in this case) and using the magenta ROI (on the right, in this case) to position itself close to the first magenta block</td>
+  </tr>
+</table>
+
+### 3.3.6 Edge Case Handling
+
+**Prevent accidental running into walls**
+
+<img width="400" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/obse.png" />
+
+- Independent of whichever behavior is currently driving steering, 2 small square ROIs arranged diagonally on either sides check how "full" of wall color they are
+- A fully filled side nudges steering away from it more strongly than a partially filled reading; this correction is added on top of the frame's already-computed steering value, before the final clamp
+- This logic runs on top of and independent of primary steering decision in every frame except while parked, acting as a standing safety margin against running into a wall or cutting a corner too tightly
+
+**Navigating an obstacle when it is too close to the wall ahead**
+
+<img width="400" alt="image" src="https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/v-photos/camera%20images/obstacle%20edge%20case%20detection.png" />
+
+- This logic runs when the "early line ROI" detect a colored floor line and when a specific block (Green during Counter Clockwise and Red during Clockwise) is detected ahead which would make it difficult for the robot to navigate between the wall ahead and the block
+- When this condition is met, the robot drives straight ahead until the nudge ROI is filled with black and the color block is not in view anymore
+- Then robot executes a turn in the direction of travel until the nudge ROI does not see black 
+
+## Microcontroller Code (Arduino Nano)
+
+**Role**
+
+- The Arduino Nano is the low-level hardware controller: it receives one serial command per frame from the Raspberry Pi and converts it into actual electrical signals for the drive motor, steering servo, an OLED status display, and a NeoPixel LED strip
+- The Pi handles all vision processing and decision-making, including which direction the vehicle should currently be driving; the Arduino has no awareness of *why* a command was sent, only how to execute it
+- We built a utility program [pi2nano_bi_test.py](https://github.com/shadyahajela/WRO-2026-FE-SN/blob/main/src/test/pi2nano_bi_test.py) to rigorously test the transmission of robot control data (servo angle and steering, newline \n delimited) to Arduino over serial connection. This program helped us identify that 30 millisecs is the minimum time between the Pi transmitting control data over USB serial connection and for the Arduino to finish processing it. If the data transfer is any faster (irrespective of whether the standard USB or USB 3 port was used), Arduino won’t be ready to receive the next byte stream over serial connection - even with non-blocking code. This would cause the outgoing message flush to fail on the Pi and if left unhandled, it would kill the challenge program
+
+**Communication Protocol**
+
+- Listens on serial at 19200 baud, matching the Pi's configured rate
+- Reads one line at a time into a fixed 20-byte buffer via `readBytesUntil('\n', ...)`, null-terminating it once a full message arrives,  the fixed buffer size is a deliberate guard against uncontrolled memory allocation on a small microcontroller
+- Expected message format: `steering speed direction lineCount state` (e.g. `110 255 1 12 OPEN`), parsed in one call with `sscanf`
+- `direction` (0 = stop, 1 = forward, 2 = reverse) is actively chosen by the Pi each frame based on what the vehicle currently needs to do, not a fixed constant,  the Arduino simply executes whatever direction it's told
+- The Arduino also talks back to the Pi: when the physical start button is pressed, it sends a plain `"START"` line over the same serial connection, with a short debounce delay
+
+**Steering & Motor Control**
+
+- Before applying anything, the received `servo` value is range-checked (`30 < servo < 160`),  if it falls outside this window, the entire steering + motor update is skipped for that frame, acting as a basic sanity check against corrupted or garbled serial data rather than driving on a bad command
+- If valid, steering is applied first (`myservo.write(servo)`), then motor output, so both actuators respond to values from the same command packet rather than a mix of an old and new one
+- Motor control goes through the L298N driver: `speed` (0–255) is written as a PWM duty cycle via `analogWrite`, while `direction` sets two digital direction pins,  forward and reverse drive the pins in opposite states, and stop (or an out-of-range `direction` value) sets both pins low, cutting drive entirely regardless of speed
+
+**Status Display (OLED)**
+
+- A 128×64 monochrome OLED (SH1106 driver, addressed over I²C) shows live telemetry every frame: current steering angle, line/lap count, motor speed, the current challenge state string, and a directional indicator (`>>` / `<<` / `XX`) showing forward, reverse, or stopped,  laid out in a fixed grid with divider lines, intended for operators to diagnose communication or control issues during testing at a glance
+
+**LED Strip Status Indicator**
+
+- An 8-pixel NeoPixel strip gives an at-a-glance visual state readout without needing to read the OLED up close: intended to show white for the OPEN challenge state and red otherwise
+- **Known issue:** the state check currently compares the character array directly (`state == "OPEN"`) rather than with `strcmp()`, which compares memory addresses rather than string contents in C/C++ and will essentially never evaluate true,  the code already carries a comment flagging the correct fix, but it hasn't been applied yet, so in practice the LED likely always shows red regardless of actual state
+- A full rainbow sweep runs once at boot as a power-on self-test, and both end pixels turn green once initialization completes, signaling the robot is ready to start
+
+**Startup Sequence**
+
+- On boot: configure pins, attach the servo, open serial, initialize the OLED and show a "BOOTING" message, initialize the LED strip, sweep the servo through a small range as a functional check before returning it to its calibrated center, run the rainbow self-test, then display "-READY-" and light the ready-indicator LEDs
+
+# 4. 3D Model Files
+
+## 4.1 Onshape CAD
 
 We used Onshape to design the 3D models used to make the robot. The files can be found here (hyperlink).
 
-## 7.2 STL Files
+## 4.2 STL Files
+
+Below are the the STL files which are used in building the robot, which can be downloaded and 3D printed. Refer to detailed [step-by-step instructions](Build_Instructions.md) to reproduce the chassis of the robot and assemble all the components on it.  
 
 **Chassis and Core Structure**
 
@@ -583,5 +875,3 @@ We used Onshape to design the 3D models used to make the robot. The files can be
 - [`GuideArrowV3.stl`](mech/3D_CAD_Files/GuideArrowV3.stl)
 - [`Battery_Holder.stl`](mech/3D_CAD_Files/Battery_Holder.stl)
 
-pz\z
-<img width="231.8" height="173.8" alt="image" src="https://github.com/user-attachments/assets/569a3b1b-590f-43e3-8801-bdd882edcaa9" />
