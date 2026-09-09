@@ -14,8 +14,11 @@ from classes.frames import Frame #define your color ranges and other frame-relat
 #get camera working
 from picamera2 import Picamera2
 import cv2
+import classes.motor_rpm_control as motor_rpm_control
 
-DRAW = True   # set False for headless runs 
+from gpiozero import Button
+
+DRAW = False  # set False for headless runs 
 
 # H = / 2, S = * 2.55, V = * 2.55
 
@@ -29,6 +32,10 @@ highRed2 = np.array([180, 255, 255])
 #   q1BLOCK COLOR VALUES
 lowGreen  = np.array([40, 70, 50])
 highGreen = np.array([85, 255, 255])
+
+#YELLOW BLOCK COLOR VALUES - tune on field
+lowYellow  = np.array([20, 100, 100])
+highYellow = np.array([35, 255, 255])
 
 #BLACK WALL COLOR VALUES
 lowBlack  = np.array([0, 0, 0])
@@ -45,7 +52,7 @@ highBlue = np.array([140, 255, 255])
 lowOrange  = np.array([6, 100, 75])
 highOrange = np.array([35, 255, 255])
 
-DEFAULT_SPEED = 130
+DEFAULT_SPEED = 145
 
 #Vehicle mobility control values - send to Arduino
 center = 105 # base steering value, PID correction is added/subtracted from this
@@ -100,11 +107,16 @@ CRITICAL_TURN_START = None
 park_box_x1, park_box_y1, park_box_x2, park_box_y2 = 580, 210, 600, 230
 PARK_BOX_MAGENTA_PX = 300   # tune on field
 
+#ORANGE PARK TRIGGER ROI (BETWEEN+CW only) - 10x10, centered on the 640x480 feed, watching for
+#orange filling it in (replaces a magenta corner box for CW, which instead uses this center ROI)
+ORANGE_PARK_X1, ORANGE_PARK_Y1, ORANGE_PARK_X2, ORANGE_PARK_Y2 = 315, 265, 325, 275
+ORANGE_PARK_PX = 95   # tune on field
+
 #LAP COUNTING / DIRECTION VALUES
-CW = 0
+CW = 1
 CCW = 0
-orangeLine = 0
-blueLine = 0 
+orangeLine = 11
+blueLine = 0
 line_detected = False
 side_wall_missing = False   # set in STRAIGHT each frame - True when the hugged-side wall drops out of camera view 
 start_time_line = time.time()
@@ -127,7 +139,7 @@ start_time_turn_count = time.time()   # debounce for turn_count, same 1.5s patte
 TURN_ANGLE_TARGET = 90   # degrees to rotate (IMU heading) before exiting TURNING
 target_heading = 0   # absolute target heading for the current turn, set to turn_count*90 (CW) or -turn_count*90 (CCW) on entering TURNING - starts at 0 (not None) so the new unconditional heading_error computation has a target before the first turn
 
-kp_turn = 1.5
+kp_turn = 0.8 #//1.5
 kd_turn = 0.45
 
 #derivative-tracking state for PRE_APPROACH's/BETWEEN's target_heading+/-90 turn_error cases
@@ -161,7 +173,6 @@ EARLY_LINE_Y1 = 250
 EARLY_LINE_Y2 = 380   # sits above bottom_frame's own y-range, so the lap line is seen earlier/farther away
 EARLY_LINE_MIN_PX = 200   
 CENTER_BLACK_FULL_PX = 95   # 10x10 center frame pixel count considered "mostly filled" with black (tune on field)
-block_force_turn_time = 0.3   # seconds to force-turn once the center frame fills
 block_force_turn_start = None
 left_parking = False   # True only for the one-time WAIT/FORCE triggered right as LEAVE finishes - reverses the forcing phase's steering direction once, then resets to False
 
@@ -173,7 +184,7 @@ TURNING = 3    # executing a turn at a lap line
 BETWEEN = 4    # entered only by finishing a WAIT/FORCE sequence while lines is 11 or 12 - CCW does what STRAIGHT does (blocks treated as red, else wall-follow), CW goes straight to PARK
 PARK = 5       # CW after 12 lines - stopjn m
 PRE_APPROACH = 6   # drive straight - drive nearly straight until the center frame fills with black, then force a hard turn for a fixed duration before handing back to normal driving
-state = LEAVE
+state = STRAIGHT
 
 STATE_NAMES = {LEAVE: "LEAVE", STRAIGHT: "STRAIGHT", OBSTACLE: "OBSTACLE", TURNING: "TURNING",
                BETWEEN: "BETWEEN", PARK: "PARK", PRE_APPROACH: "PRE_APPROACH"}
@@ -214,14 +225,28 @@ def wall_follow(image, image_source):
     wall_frame = Frame(wfx1, wfy1, wfx2, wfy2, image, wall_low, wall_high, frameColor=(255,0,0), leftZoneX=gap_left_x, rightZoneX=gap_right_x, source=image_source)
     left_x, right_x, wall_mask, scan_y1, scan_y2 = wall_frame.getInnerEdgesSplit(color=wall_idx, col_threshold=20, contourColor=(255,255,255))
 
-    if CW or (state == BETWEEN and CCW):
+    if (state == BETWEEN and CCW) or (state != BETWEEN and CW):
         #CW nudges the left wall position by a fixed offset - uses the REAL detected value when
         #available (stays dynamic to whatever the camera sees), falling back to the frame's own
-        #edge only when nothing is detected at all - the offset is always applied either way
-        left_x = (left_x if left_x is not None else wall_frame.x1) + left_wall_offset
-    elif CCW:
-        #CCW: mirror of the above - nudge the right wall position 
-        right_x = (right_x if right_x is not None else wall_frame.x2) - right_wall_offset
+        #edge only when nothing is detected at all - the offset is always applied either way.
+        #Written as (state==BETWEEN and CCW) / (state!=BETWEEN and CW) rather than a bare
+        #`CW or (...)` - a bare CW would short-circuit true even when state==BETWEEN and CW,
+        #which belongs in the right_x branch below, making that branch unreachable
+        if state == BETWEEN:
+            #fixed offset from the frame's own static left edge - ignores whatever the camera
+            #actually sees on that wall, unlike the dynamic (camera-detected) case below
+            left_x = wall_frame.x1 + left_wall_offset
+        else:
+            left_x = (left_x if left_x is not None else wall_frame.x1) + left_wall_offset
+
+    elif (state == BETWEEN and CW) or (state != BETWEEN and CCW):
+        #CCW: mirror of the above - nudge the right wall position
+        if state == BETWEEN:
+            #fixed offset from the frame's own static right edge - ignores whatever the camera
+            #actually sees on that wall, unlike the dynamic (camera-detected) case below
+            right_x = wall_frame.x2 - right_wall_offset
+        else:
+            right_x = (right_x if right_x is not None else wall_frame.x2) - right_wall_offset
 
     mid_y = (scan_y1 + scan_y2) // 2
     if left_x is not None:
@@ -344,6 +369,27 @@ def calculate_servo_angle_from_obstacle(object_angle, is_green):
         servo_angle = center + (object_angle - OBJECT_LINE_ANGLE_THRESHOLD) * OBSTACLE_KP
     return max(center - steering_margin, min(center + steering_margin, round(servo_angle)))
 
+
+time.sleep(5)
+
+ser.write("# OBBY\n".encode()) #Limit to 4 chars. Arduino code and the screen can't handle more
+ser.flush()
+
+time.sleep(1)
+
+#start button - signal wire on GPIO16 (physical pin 36), ground wire on physical pin 34
+BUTTON_PIN = 16
+start_button = Button(BUTTON_PIN, bounce_time=0.05)
+
+print(f"Waiting for start button release on GPIO{BUTTON_PIN}...")
+start_button.wait_for_press()
+print("Button pressed")
+start_button.wait_for_release()
+print("Button released - starting run")
+
+ser.write("# VRRM\n".encode())
+ser.flush()
+
 #main loop to show camera feed
 while True:
 
@@ -399,13 +445,19 @@ while True:
             print("Jadoo going counter-clockwise.... weeeeeee")
             CCW = 1
 
-    #detect red across the entire screen and draw a bounding box around the largest blob
-    red_frame = Frame(0, 120, 640, 480, image, [lowRed1, lowRed2], [highRed1, highRed2], frameColor=(0,0,255), source=image_source)
-    red_contours = red_frame.getColorContours([0,1], min_area=600)
+    #detect red across the entire screen and draw a bounding box around the largest blob - when
+    #CW, yellow is treated as an additional red obstacle color
+    red_low  = [lowRed1, lowRed2, lowYellow] if CW else [lowRed1, lowRed2]
+    red_high = [highRed1, highRed2, highYellow] if CW else [highRed1, highRed2]
+    red_frame = Frame(0, 120, 640, 480, image, red_low, red_high, frameColor=(0,0,255), source=image_source)
+    red_contours = red_frame.getColorContours(list(range(len(red_low))), min_area=600)
 
-    #detect green across the entire screen and draw a bounding box around the largest blob
-    green_frame = Frame(0, 120, 640, 480, image, [lowGreen], [highGreen], frameColor=(0,255,0), source=image_source)
-    green_contours = green_frame.getColorContours(0, min_area=600)
+    #detect green across the entire screen and draw a bounding box around the largest blob - when
+    #CCW, yellow is treated as an additional green obstacle color
+    green_low  = [lowGreen, lowYellow] if CCW else [lowGreen]
+    green_high = [highGreen, highYellow] if CCW else [highGreen]
+    green_frame = Frame(0, 120, 640, 480, image, green_low, green_high, frameColor=(0,255,0), source=image_source)
+    green_contours = green_frame.getColorContours(list(range(len(green_low))), min_area=600)
 
     # #detect green across the entire screen and draw a bounding box around the largest blob
     # green_frame = Frame(0, 120, 640, 480, image, [lowGreen, lowBlue], [highGreen, highBlue], frameColor=(0,255,0), source=image_source)
@@ -486,53 +538,13 @@ while True:
     # print(IMU_WEIGHT)
     # print(CAM_WEIGHT)
     if state == PARK:
-        if CW:
-            #CW: timed parking maneuver
-            if park_start_time is None:
-                park_start_time = time.time()
-            park_elapsed = time.time() - park_start_time
-
-            if park_elapsed < PARK_STRAIGHT_TIME:
-                speed_value = 130
-                steering_value = center
-                on = 1
-            elif park_elapsed < PARK_STRAIGHT_TIME + PARK_REVERSE_RIGHT_TIME:
-                speed_value = 130
-                steering_value = center - steering_margin
-                on = 2
-            elif park_elapsed < PARK_STRAIGHT_TIME + PARK_REVERSE_RIGHT_TIME + PARK_REVERSE_LEFT_TIME:
-                speed_value = 130
-                steering_value = center + steering_margin
-                on = 2
-            else:
-                speed_value = 0
-                steering_value = center
-                on = 1
-        else:
-            #CCW: timed parking maneuver
-            if park_start_time is None:
-                park_start_time = time.time()
-            park_elapsed = time.time() - park_start_time
-
-            if park_elapsed < PARK_STRAIGHT_TIME:
-                speed_value = 130
-                steering_value = center
-                on = 1
-            elif park_elapsed < PARK_STRAIGHT_TIME + PARK_REVERSE_RIGHT_TIME:
-                speed_value = 130
-                steering_value = center + steering_margin
-                on = 2
-            elif park_elapsed < PARK_STRAIGHT_TIME + PARK_REVERSE_RIGHT_TIME + PARK_REVERSE_LEFT_TIME:
-                speed_value = 130
-                steering_value = center - steering_margin
-                on = 2
-            else:
-                speed_value = 0
-                steering_value = center
-                on = 1
+        break
+        
+        
+      
 
     elif state == LEAVE:
-        speed_value = 140
+        speed_value = 145
 
         #leaving parking frames (is it CW or CCW?)
         leave_CW_frame = Frame(40, 300, 120, 380, image, [lowBlack, lowMagenta], [highBlack, highMagenta], frameColor=(0,255,0), source=image_source)
@@ -549,31 +561,29 @@ while True:
                 CCW = 1
 
         #start the leave timer once, the first time we enter this state
-        if leave_start_time is None:
-            leave_start_time = time.time()
+        #drive straight out of parking, angled toward the CW/CCW side
+        steering_value = center + steering_margin if CW else center - steering_margin
+        on = 1
+        message = (f"$ {steering_value} {speed_value} {on}\n")
+        ser.write(message.encode())
+        ser.flush()
+        
+        motor_rpm_control.driveRotations(1,130,'FWD')
 
-        elapsed = time.time() - leave_start_time
-
-        if elapsed < leave_forward_time:
-            #drive straight out of parking, angled toward the CW/CCW side
-            speed_value = 135
-            steering_value = center + steering_margin if CW else center - steering_margin
-            on = 1
+        #done leaving - check for a block needing WAIT/FORCE treatment before handing off to normal driving
+        if CW and (redPx > BLOCK_MIN_PIXELS):
+            block_force_turn_start = None
+            left_parking = True
+            state = OBSTACLE
+            CRITICAL_TURN  = True
+        elif CCW and (greenPx > BLOCK_MIN_PIXELS):
+            block_force_turn_start = None
+            left_parking = True
+            state = OBSTACLE
+            CRITICAL_TURN  = True
         else:
-            #done leaving - check for a block needing WAIT/FORCE treatment before handing off to normal driving
-            if CW and (redPx > BLOCK_MIN_PIXELS):
-                block_force_turn_start = None
-                left_parking = True
-                state = OBSTACLE
-                CRITICAL_TURN  = True
-            elif CCW and (greenPx > BLOCK_MIN_PIXELS):
-                block_force_turn_start = None
-                left_parking = True
-                state = OBSTACLE
-                CRITICAL_TURN  = True
-            else:
-                state = OBSTACLE   # placeholder - redispatched to STRAIGHT/OBSTACLE/BETWEEN next frame
-            leave_start_time = None
+            state = OBSTACLE   # placeholder - redispatched to STRAIGHT/OBSTACLE/BETWEEN next frame
+
 
     elif state == TURNING:
         #if an obstacle shows up mid-turn, bail out back to normal driving/avoidance right away
@@ -639,43 +649,35 @@ while True:
             turned_enough = abs(turn_error) <= 2
 
             if turned_enough: #if the heading has rotated the target angle, go back to straight mode
-                state = STRAIGHT
+                state = BETWEEN
                 line_detected = False
-                # frontBlack_detected = False
+                frontBlack_detected = False
                 side_wall_missing = False
                 previous_error_wall = None
                 previous_heading_error = None
                 turn_delay_time = None
                 print("EXIT TURN")
 
-            if time.time() - block_force_turn_start > block_force_turn_time:
-                #lines has no bearing on BETWEEN anywhere else - this is the ONLY way in: finishing
-                #this WAIT/FORCE sequence once lines has reached 12 (it may have ticked over
-                #mid-maneuver, since lap-line detection runs every frame regardless of state)
-                state = BETWEEN
-                #reset, same as the turned_enough->STRAIGHT exit above - otherwise a stale True
-                #here would hijack BETWEEN into TURNING on the very next frame (line_detected is
-                #no longer guarded once state != PRE_APPROACH)
-                line_detected = False
-                turn_delay_time = None
-
-
     elif state == BETWEEN:
-        speed_value = 140
+        IMU_WEIGHT = 0.7
+        CAM_WEIGHT = 0.3
+        speed_value = 150
         if CW:
-             #CCW: watch the bottom-right corner for the magenta parking wall filling it in
-            park_box_frame = Frame(park_box_x1, park_box_y1, park_box_x2, park_box_y2, image, [lowMagenta], [highMagenta], frameColor=(255,0,255), source=image_source)
-            park_box_px = park_box_frame.getContour(0, contourColor=(255,0,255))
-
-            if park_box_px >= PARK_BOX_MAGENTA_PX:
+             #CW: watch a small center ROI for orange filling it in, instead of the magenta
+             #corner box CCW uses
+            orange_park_frame = Frame(ORANGE_PARK_X1, ORANGE_PARK_Y1, ORANGE_PARK_X2, ORANGE_PARK_Y2, image, [lowOrange], [highOrange], frameColor=(0,128,255), source=image_source)
+            orange_park_px = orange_park_frame.getContour(0, contourColor=(0,128,255))
+            print(orange_park_px)
+            if orange_park_px >= ORANGE_PARK_PX:
                 state = PARK
             else:
                 #wall_follow's own BETWEEN+CW nudges right_x using right_wall_offset (same
                 #dynamic logic CW uses), fused with the module-level IMU heading-hold signal
                 #exactly like STRAIGHT does in open_challenge
-                right_wall_offset = 50
+                right_wall_offset = 220
                 steering_cam, left_x, right_x = wall_follow(image, image_source)
-                steering_value = center + round(IMU_WEIGHT * steering_imu + CAM_WEIGHT * steering_cam)
+                steering_value = center + round(0.4 * steering_imu + 0.6 * steering_cam)
+                print(f"Steering: {steering_value} Steer IMU: {steering_imu} Steering CAM: {steering_cam}")
 
         else:
             #CCW: watch the bottom-right corner for the magenta parking wall filling it in
@@ -688,7 +690,7 @@ while True:
                 #wall_follow's own BETWEEN+CCW nudges left_x using left_wall_offset (same
                 #dynamic logic CW uses), fused with the module-level IMU heading-hold signal
                 #exactly like STRAIGHT does in open_challenge
-                left_wall_offset = 50
+                left_wall_offset = 100
                 steering_cam, left_x, right_x = wall_follow(image, image_source)
                 steering_value = center + round(IMU_WEIGHT * steering_imu + CAM_WEIGHT * steering_cam)
 
@@ -835,28 +837,35 @@ while True:
         cv2.putText(image, f"Steering: {steering_value}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
         cv2.putText(image, f"Direction: {'CW' if CW else 'CCW'}", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
         cv2.putText(image, f"State: {STATE_NAMES[state]}", (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-        cv2.putText(image, f"Heading: {heading}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        cv2.putText(image, f"Heading: {round(heading)}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
         cv2.putText(image, f"Target Heading: {target_heading}", (10, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
         cv2.putText(image, f"FPS: {fps:.1f}", (400, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
 
+    if (state != LEAVE) and (state != PARK):
+        #send values to micrbit through serial connections
+        message = (f"$ {steering_value}\n")
 
-    #send values to micrbit through serial connections
-    message = (f"$ {steering_value} {speed_value} {on}\n")
+        #flag large frame-to-frame steering jumps for debugging
+        if (abs(steering_value - prev_steer) > 10 or steering_value == 0):
+            print(f"*********************************************************************", steering_value)
 
-    #flag large frame-to-frame steering jumps for debugging
-    if (abs(steering_value - prev_steer) > 10 or steering_value == 0):
-        print(f"*********************************************************************", steering_value)
+        prev_steer = steering_value
 
-    prev_steer = steering_value
-
-    # only send if different
-    if message != last_message:
-        print(message)
-        ser.write(message.encode())
-        ser.flush()
-        time.sleep(0.03)  
-        last_message = message
+        # only send if different
+        if message != last_message:
+            match on:
+                case 1:
+                    direction = "FWD"
+                case 2:
+                    direction = "BWD"
+            print(speed_value)
+            motor_rpm_control.driveMotor(speed_value, direction)
+            print(message)
+            ser.write(message.encode())
+            ser.flush()
+            time.sleep(0.03)  
+            last_message = message
                                                                                                                            
     if DRAW:
         #display camera feed after processing
@@ -864,12 +873,36 @@ while True:
 
         # Check for 'q' key press to exit
         if cv2.waitKey(1) & 0xFF == ord('q'):
-            ser.write(f"$ {center} 0 1\n".encode())
+            motor_rpm_control.stopMotor()
+            ser.write(f"$ {center}\n".encode())
             ser.flush()
             time.sleep(0.05)
             break
 
-ser.write(f"$ {center} 0 1\n".encode())
+
+if state == PARK:
+
+    if CCW:
+        steering_value = center
+        message = (f"$ {steering_value}\n")
+        ser.write(message.encode())
+        ser.flush()
+        motor_rpm_control.stopMotor() 
+        time.sleep(3)
+        motor_rpm_control.driveRotations(4.25,130,'FWD')
+
+        time.sleep(3)
+
+        steering_value = center + steering_margin
+        message = (f"$ {steering_value}\n")
+        ser.write(message.encode())
+        ser.flush()
+        
+        motor_rpm_control.driveRotations(3,130,'BWD')
+
+
+motor_rpm_control.stopMotor()
+ser.write(f"$ {center}\n".encode())
 ser.flush()
 print("FINISH")
 time.sleep(0.10)
