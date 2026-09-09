@@ -1,19 +1,48 @@
 import serial
-import random
+import time
 
-ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
+from gpiozero import Button
 
-print("Waiting for requests...")
+ser = serial.Serial('/dev/ttyUSB0', 19200, timeout=1)
+
+commands = [
+    f"$ 108\n",
+    f"$ 90\n",
+    f"$ 108\n",
+    f"$ 90\n",
+    f"$ 100\n"
+]
+
+print("sending...")
+
+time.sleep(5)
+
+ser.write("# OPIN\n".encode())
+ser.flush()
+
+time.sleep(1)
+
+#start button - signal wire on GPIO16 (physical pin 36), ground wire on physical pin 34
+BUTTON_PIN = 16
+start_button = Button(BUTTON_PIN, bounce_time=0.05)
+
+print(f"Waiting for start button release on GPIO{BUTTON_PIN}...")
+start_button.wait_for_press()
+print("Button pressed")
+start_button.wait_for_release()
+print("Button released - starting run")
+
+ser.write("# VRMM\n".encode())
+ser.flush()
 
 while True:
-    if ser.in_waiting:
-        message = ser.readline().decode().strip()
 
-        print("Received:", message)
+    for each in commands:
+        print(each)
+        ser.write(each.encode())
+        ser.flush()
+        time.sleep(0.5)
 
-        if message == "START":
-            ser.write(f"115 155 1 12 OPEN\n".encode())
-            ser.flush()
         
 ser.close()
         

@@ -15,10 +15,15 @@ from classes.motor_rpm_control import motor, encoder, controller #Required to ha
 from classes.frames import Frame #define your color ranges and other frame-related functions
 
 import math
+import classes.motor_rpm_control as motor_rpm_control
 
-#get camera working 
+#get camera working
 from picamera2 import Picamera2
 import cv2
+
+from gpiozero import Button
+
+DRAW = False   # set False for headless runs 
 
 picam2 = Picamera2()
 
@@ -192,6 +197,27 @@ def wall_follow(image):
     print(f"Wall Left X: {left_x}, Wall Right X: {right_x}, Corridor Center: {corridor_center}, Img Center: {img_center}, Wall Error: {wall_error}, Steering Correction: {steer}")
     return steer, left_x, right_x
 
+
+time.sleep(5)
+
+ser.write("# OPEN\n".encode()) #Limit to 4 chars. Arduino code and the screen can't handle more
+ser.flush()
+
+time.sleep(1)
+
+#start button - signal wire on GPIO16 (physical pin 36), ground wire on physical pin 34
+BUTTON_PIN = 16
+start_button = Button(BUTTON_PIN, bounce_time=0.05)
+
+print(f"Waiting for start button release on GPIO{BUTTON_PIN}...")
+start_button.wait_for_press()
+print("Button pressed")
+start_button.wait_for_release()
+print("Button released - starting run")
+
+ser.write("# VRRM\n".encode())
+ser.flush()
+
 #main loop to show camera feed
 while True:
 
@@ -346,22 +372,29 @@ while True:
     fps = 1 / (current_frame_time - prev_frame_time) if current_frame_time != prev_frame_time else 0
     prev_frame_time = current_frame_time
 
-    #print values on camera feed
-    cv2.putText(image, f"Lines: {lines}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-    cv2.putText(image, f"Steering: {steering_value}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-    cv2.putText(image, f"Direction: {'CW' if CW else 'CCW'}", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-    cv2.putText(image, f"State: {'turn' if state else 'straight'}", (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-    cv2.putText(image, f"Heading: {heading}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-    cv2.putText(image, f"Target Heading: {target_heading}", (10, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-    cv2.putText(image, f"FPS: {fps:.1f}", (400, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+    if DRAW:
+        #print values on camera feed
+        cv2.putText(image, f"Lines: {lines}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        cv2.putText(image, f"Steering: {steering_value}", (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        cv2.putText(image, f"Direction: {'CW' if CW else 'CCW'}", (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        cv2.putText(image, f"State: {'turn' if state else 'straight'}", (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        cv2.putText(image, f"Heading: {round(heading)}", (10, 150), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        cv2.putText(image, f"Target Heading: {target_heading}", (10, 180), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        cv2.putText(image, f"FPS: {fps:.1f}", (400, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
 
 
-    message = (f"$ {steering_value} {speed_value} {on}\n")
+    message = (f"$ {steering_value}\n")
 
     # only send if different
     if message != last_message:
-    # if True:
+        match on:
+            case 1:
+                direction = "FWD"
+            case 2:
+                direction = "BWD"
+        
+        motor_rpm_control.driveMotor(speed_value, direction)
         ser.write(message.encode())
         ser.flush()
         print(f"************* {message}")
@@ -370,16 +403,17 @@ while True:
 
     time.sleep(0.01)
 
-    #display camera feed after processing
-    cv2.imshow("Camera Feed", image)
+    if DRAW:
+        #display camera feed after processing
+        cv2.imshow("Camera Feed", image)
 
-    # Check for 'q' key press to exit
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        ser.write(f"$ 100 0 1\n".encode())
-        time.sleep(0.05)
-        break
+        # Check for 'q' key press to exit
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
-ser.write(f"$ 100 0 1\n".encode())
+motor_rpm_control.stopMotor()
+ser.write(f"$ 100\n".encode())
+ser.flush()
 print("FINISH")
 time.sleep(0.10)
 bno.cleanup()

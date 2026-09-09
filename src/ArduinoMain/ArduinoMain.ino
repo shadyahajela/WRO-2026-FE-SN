@@ -46,10 +46,8 @@
 // Steering servo
 #define SERVO_PIN 2
 
-// L298N motor driver
-#define ENABLEMOT 3
-#define MOTOR1 10
-#define MOTOR2 11
+// Built-in Arduino LED
+#define LED_PIN 13
 
 // OLED
 #define SCREEN_WIDTH 128
@@ -73,10 +71,10 @@ char inputBuffer[BUFFER_SIZE];
 int bufferIndex = 0;
 
 int servo_turn = SERVO_CENTER;
-int speed = 0;
-int dir = 0;
-int line_count = 0;
-char state[5];
+//int speed = 0;
+//int dir = 0;
+//int line_count = 0;
+//char state[5];
 
 //------------------------------------------------------------------------------
 // HARDWARE OBJECTS
@@ -98,14 +96,18 @@ Servo myservo;
 void setup() {
 
   // Motor pins
-  pinMode(MOTOR1, OUTPUT);
-  pinMode(MOTOR2, OUTPUT);
-  pinMode(ENABLEMOT, OUTPUT);
+//  pinMode(MOTOR1, OUTPUT);
+//  pinMode(MOTOR2, OUTPUT);
+//  pinMode(ENABLEMOT, OUTPUT);
 
   // Make sure motor is stopped at startup
-  analogWrite(ENABLEMOT, 0);
-  digitalWrite(MOTOR1, LOW);
-  digitalWrite(MOTOR2, LOW);
+//  analogWrite(ENABLEMOT, 0);
+//  digitalWrite(MOTOR1, LOW);
+//  digitalWrite(MOTOR2, LOW);
+
+  // Built-in LED
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
 
   // Serial communication with Raspberry Pi 
   // Must match Raspberry Pi baud rate.
@@ -255,60 +257,83 @@ void processData(char receivedData[]) {
   // HANDLE MESSAGE TYPE
   //----------------------------------------------------------------------
   
-  switch (header) {
-  
-      //==================================================================
-      // $ = FULL MESSAGE
-      // Expected:
-      // $ servo_turn speed dir line_count state
-      //==================================================================
-  
-      case '$':
+  //--------------------------------------------------------------------------
+  // HANDLE MESSAGE TYPE
+  //--------------------------------------------------------------------------
 
-          // parsed = sscanf(
-          //     receivedData,
-          //     " $ %d %d %d",
-          //     &servo_turn, 
-          //     &speed,
-          //     &dir
-          //     );
-  
-         parsed = sscanf(
-             receivedData,
-             " $ %d %d %d %d %4s",
-             &servo_turn, &speed
-             &speed,
-             &dir,
-             &line_count,
-             state
-         );
-  
-          // Make sure ALL 5 values were received
-          if (parsed != 5) {
-              return;
-          }
-  
-  
-          //------------------------------------------------------------------
-          // SAFETY LIMITS
-          //------------------------------------------------------------------
-  
-          servo_turn = constrain(
-              servo_turn,
-              SERVO_CENTER - SERVO_RANGE,
-              SERVO_CENTER + SERVO_RANGE
-          );
-  
-          speed = constrain(
-              speed,
-              0,
-              255
-          );
-   
-          break;
-  
-      default:
-          return;
+  switch (header) {
+
+    //======================================================================
+    // # = TURN ON BUILT-IN LED
+    // Expected:
+    // #
+    //======================================================================
+
+    case '#':
+
+      char msg[5];
+
+      parsed = sscanf(
+        receivedData,
+        " # %4s",
+        &msg
+      );
+
+      if (parsed != 1) {
+        return;
+      }
+
+      digitalWrite(LED_PIN, HIGH);
+      screen.setTextColor(SH110X_WHITE);
+      screen.clearDisplay();
+      screen.setTextSize(3);
+      screen.setCursor(30, 20);
+      screen.print(msg);
+      screen.display();
+      
+
+      return;
+
+
+    //======================================================================
+    // $ = SERVO VALUE
+    // Expected:
+    // $ servo_turn
+    //======================================================================
+
+    case '$':
+
+      parsed = sscanf(
+        receivedData,
+        " $ %d",
+        &servo_turn
+      );
+
+      if (parsed != 1) {
+        return;
+      }
+
+      // Safety limit
+      servo_turn = constrain(
+        servo_turn,
+        SERVO_CENTER - SERVO_RANGE,
+        SERVO_CENTER + SERVO_RANGE
+      );
+
+      // Set servo
+      myservo.write(servo_turn);
+
+      return;
+
+
+    //======================================================================
+    // UNKNOWN HEADER
+    //======================================================================
+
+    default:
+
+      return;
+  }
   }
   
   
@@ -316,172 +341,172 @@ void processData(char receivedData[]) {
   // OLED TELEMETRY
   //--------------------------------------------------------------------------
 
-  myservo.write(servo_turn);
+//  myservo.write(servo_turn);
 
-  driveMotor(speed,dir);
+//  driveMotor(speed,dir);
  
-  screen.clearDisplay();
- 
-  screen.setTextColor(SH110X_WHITE);
+//  screen.clearDisplay();
+// 
+//  screen.setTextColor(SH110X_WHITE);
+//  
+//  // Servo
+//  screen.setTextSize(2);
+//  screen.setCursor(2, 2);
+//  screen.print(servo_turn);
+//  
+//   //Separator
+//  screen.drawFastVLine(
+//    40,
+//    0,
+//    20,
+//    SH110X_WHITE
+//  );
+// 
+//  // Line count
+//  screen.setCursor(44, 2);
+//  screen.print(line_count);
+// 
+//  //Separator
+//  screen.drawFastVLine(
+//    70,
+//    0,
+//    20,
+//    SH110X_WHITE
+//  );
+// 
+//  // Speed
+//  screen.setCursor(75, 2);
+//  screen.print(speed);
+//  
+//  //Horizontal separator
+//  screen.drawFastHLine(
+//    0,
+//    20,
+//    128,
+//    SH110X_WHITE
+//  );
+// 
+//  // State
+//  screen.setTextSize(3);
+//  screen.setCursor(0, 30);
+//  screen.print(state);
+// 
+//  //Motor direction
+//  screen.drawFastVLine(
+//    80,
+//    20,
+//    44,
+//    SH110X_WHITE
+//  );
+// 
+//  //--------------------------------------------------------------------------
+//  // UPDATE OLED ONCE
+//  //--------------------------------------------------------------------------
+// 
+//  screen.display();
   
-  // Servo
-  screen.setTextSize(2);
-  screen.setCursor(2, 2);
-  screen.print(servo_turn);
-  
-   //Separator
-  screen.drawFastVLine(
-    40,
-    0,
-    20,
-    SH110X_WHITE
-  );
- 
-  // Line count
-  screen.setCursor(44, 2);
-  screen.print(line_count);
- 
-  //Separator
-  screen.drawFastVLine(
-    70,
-    0,
-    20,
-    SH110X_WHITE
-  );
- 
-  // Speed
-  screen.setCursor(75, 2);
-  screen.print(speed);
-  
-  //Horizontal separator
-  screen.drawFastHLine(
-    0,
-    20,
-    128,
-    SH110X_WHITE
-  );
- 
-  // State
-  screen.setTextSize(3);
-  screen.setCursor(0, 30);
-  screen.print(state);
- 
-  //Motor direction
-  screen.drawFastVLine(
-    80,
-    20,
-    44,
-    SH110X_WHITE
-  );
- 
-  //--------------------------------------------------------------------------
-  // UPDATE OLED ONCE
-  //--------------------------------------------------------------------------
- 
-  screen.display();
-  
-}
+//}
 
 
 //------------------------------------------------------------------------------
 // MOTOR CONTROL
 //------------------------------------------------------------------------------
 
-void driveMotor(int speed, int dir) {
-
-  /*
-     L298N motor control:
-
-        dir = 0
-            STOP
-
-        dir = 1
-            FORWARD
-
-        dir = 2
-            REVERSE
-  */
-
-  screen.setTextSize(3);
-  screen.setCursor(90, 30);
-
-  //--------------------------------------------------------------------------
-  // FORWARD
-  //--------------------------------------------------------------------------
-
-  if (dir == 1) {
-
-    analogWrite(
-      ENABLEMOT,
-      speed
-    );
-
-    digitalWrite(
-      MOTOR1,
-      LOW
-    );
-
-    digitalWrite(
-      MOTOR2,
-      HIGH
-    );
-
-    screen.print(">>");
-  }
-
-
-  //--------------------------------------------------------------------------
-  // REVERSE
-  //--------------------------------------------------------------------------
-
-  else if (dir == 2) {
-
-    analogWrite(
-      ENABLEMOT,
-      speed
-    );
-
-    digitalWrite(
-      MOTOR1,
-      HIGH
-    );
-
-    digitalWrite(
-      MOTOR2,
-      LOW
-    );
-
-    screen.print("<<");
-  }
-
-
-  //--------------------------------------------------------------------------
-  // STOP
-  //--------------------------------------------------------------------------
-
-  else {
-
-    analogWrite(
-      ENABLEMOT,
-      0
-    );
-
-    digitalWrite(
-      MOTOR1,
-      LOW
-    );
-
-    digitalWrite(
-      MOTOR2,
-      LOW
-    );
-
-    screen.print("XX");
-  }
-
-  // IMPORTANT:
-  // OLED is NOT updated here.
-  //
-  // processData() calls screen.display()
-  // once after all telemetry is drawn.
-}
+//void driveMotor(int speed, int dir) {
+//
+//  /*
+//     L298N motor control:
+//
+//        dir = 0
+//            STOP
+//
+//        dir = 1
+//            FORWARD
+//
+//        dir = 2
+//            REVERSE
+//  */
+//
+//  screen.setTextSize(3);
+//  screen.setCursor(90, 30);
+//
+//  //--------------------------------------------------------------------------
+//  // FORWARD
+//  //--------------------------------------------------------------------------
+//
+//  if (dir == 1) {
+//
+//    analogWrite(
+//      ENABLEMOT,
+//      speed
+//    );
+//
+//    digitalWrite(
+//      MOTOR1,
+//      LOW
+//    );
+//
+//    digitalWrite(
+//      MOTOR2,
+//      HIGH
+//    );
+//
+//    screen.print(">>");
+//  }
+//
+//
+//  //--------------------------------------------------------------------------
+//  // REVERSE
+//  //--------------------------------------------------------------------------
+//
+//  else if (dir == 2) {
+//
+//    analogWrite(
+//      ENABLEMOT,
+//      speed
+//    );
+//
+//    digitalWrite(
+//      MOTOR1,
+//      HIGH
+//    );
+//
+//    digitalWrite(
+//      MOTOR2,
+//      LOW
+//    );
+//
+//    screen.print("<<");
+//  }
+//
+//
+//  //--------------------------------------------------------------------------
+//  // STOP
+//  //--------------------------------------------------------------------------
+//
+//  else {
+//
+//    analogWrite(
+//      ENABLEMOT,
+//      0
+//    );
+//
+//    digitalWrite(
+//      MOTOR1,
+//      LOW
+//    );
+//
+//    digitalWrite(
+//      MOTOR2,
+//      LOW
+//    );
+//
+//    screen.print("XX");
+//  }
+//
+//  // IMPORTANT:
+//  // OLED is NOT updated here.
+//  //
+//  // processData() calls screen.display()
+//  // once after all telemetry is drawn.
+//}
